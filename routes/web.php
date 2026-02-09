@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CRM\DealController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -38,6 +39,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/utils/typography', fn () => Inertia::render('Utils/Typography'))->name('utils.typography');
     Route::get('/utils/colors', fn () => Inertia::render('Utils/Colors'))->name('utils.colors');
     Route::get('/utils/shadows', fn () => Inertia::render('Utils/Shadows'))->name('utils.shadows');
+
+    // CRM Deals
+    Route::prefix('crm')->group(function () {
+        Route::get('/deals-pipeline', [DealController::class, 'pipeline'])->name('crm.deals.pipeline');
+        Route::put('/deals/{deal}/stage', [DealController::class, 'updateStage'])->name('crm.deals.updateStage');
+        Route::resource('deals', DealController::class)->names('crm.deals');
+    });
 });
 
 /*

@@ -38,6 +38,12 @@ const sidebarItem: menu[] = [
     icon: 'custom-shadow',
     to: '/utils/shadows'
   },
+  { header: 'CRM' },
+  {
+    title: 'Deals',
+    icon: 'custom-briefcase',
+    to: '/crm/deals-pipeline'
+  },
   { header: 'Pages' },
   {
     title: 'Login',

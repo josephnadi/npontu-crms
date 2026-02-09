@@ -1,6 +1,7 @@
 import './bootstrap';
 import { createApp, h } from 'vue';
 import { createInertiaApp } from '@inertiajs/vue3';
+import { ZiggyVue } from 'ziggy-js';
 import { createPinia } from 'pinia';
 import vuetify from './plugins/vuetify';
 import { PerfectScrollbarPlugin } from 'vue3-perfect-scrollbar';
@@ -39,6 +40,7 @@ createInertiaApp({
     setup({ el, App, props, plugin }) {
         const app = createApp({ render: () => h(App, props) });
         app.use(plugin);
+        app.use(ZiggyVue);
         app.use(createPinia());
         app.use(PerfectScrollbarPlugin);
         app.use(VueTablerIcons);
