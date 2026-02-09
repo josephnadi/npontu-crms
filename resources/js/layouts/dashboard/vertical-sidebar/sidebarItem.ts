@@ -28,6 +28,11 @@ const sidebarItem: menu[] = [
     to: '/crm/deals-pipeline'
   },
   {
+    title: 'Clients',
+    icon: 'custom-user-fill',
+    to: '/crm/clients'
+  },
+  {
     title: 'Activities',
     icon: 'custom-calendar',
     to: '/crm/activities'

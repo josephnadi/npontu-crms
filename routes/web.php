@@ -3,6 +3,7 @@
 use App\Http\Controllers\CRM\DealController;
 use App\Http\Controllers\CRM\ActivityController;
 use App\Http\Controllers\CRM\DashboardController;
+use App\Http\Controllers\CRM\ClientController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -52,6 +53,9 @@ Route::middleware('auth')->group(function () {
         // Activities
         Route::get('/activities-calendar', [ActivityController::class, 'calendar'])->name('crm.activities.calendar');
         Route::resource('activities', ActivityController::class)->names('crm.activities');
+
+        // Clients
+        Route::resource('clients', ClientController::class)->names('crm.clients');
     });
 });
 
