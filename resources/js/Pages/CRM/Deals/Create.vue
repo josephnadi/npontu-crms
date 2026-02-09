@@ -56,10 +56,10 @@ const updateProbability = () => {
                 <v-text-field
                   v-model="form.title"
                   label="Deal Title"
-                  placeholder="e.g. Enterprise Software License"
                   :error-messages="form.errors.title"
                   required
                   variant="outlined"
+                  prepend-inner-icon="mdi-briefcase-outline"
                 ></v-text-field>
               </v-col>
 
@@ -72,6 +72,7 @@ const updateProbability = () => {
                   :error-messages="form.errors.value"
                   required
                   variant="outlined"
+                  prepend-inner-icon="mdi-currency-usd"
                 ></v-text-field>
               </v-col>
 
@@ -85,6 +86,7 @@ const updateProbability = () => {
                   :error-messages="form.errors.deal_stage_id"
                   required
                   variant="outlined"
+                  prepend-inner-icon="mdi-stairs-up"
                   @update:model-value="updateProbability"
                 ></v-select>
               </v-col>
@@ -95,25 +97,28 @@ const updateProbability = () => {
                   label="Contact Name"
                   :error-messages="form.errors.contact_name"
                   variant="outlined"
+                  prepend-inner-icon="mdi-account-outline"
                 ></v-text-field>
               </v-col>
 
               <v-col cols="12" md="6">
                 <v-text-field
                   v-model="form.client_name"
-                  label="Client/Company"
+                  label="Client / Company"
                   :error-messages="form.errors.client_name"
                   variant="outlined"
+                  prepend-inner-icon="mdi-office-building-outline"
                 ></v-text-field>
               </v-col>
 
-              <v-col cols="12" md="6">
+              <v-col cols="12">
                 <v-text-field
                   v-model="form.expected_close_date"
                   label="Expected Close Date"
                   type="date"
                   :error-messages="form.errors.expected_close_date"
                   variant="outlined"
+                  prepend-inner-icon="mdi-calendar-clock"
                 ></v-text-field>
               </v-col>
 

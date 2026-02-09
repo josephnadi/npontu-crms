@@ -38,4 +38,12 @@ class Deal extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    /**
+     * Get all of the deal's activities.
+     */
+    public function activities()
+    {
+        return $this->morphMany(Activity::class, 'activityable');
+    }
 }

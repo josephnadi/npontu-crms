@@ -72,7 +72,9 @@ class DealController extends Controller
     public function show(Deal $deal)
     {
         return Inertia::render('CRM/Deals/Show', [
-            'deal' => $deal->load('stage'),
+            'deal' => $deal->load(['stage', 'activities' => function($query) {
+                $query->orderBy('activity_date', 'desc');
+            }]),
         ]);
     }
 

@@ -25,10 +25,13 @@ const formatDate = (date) => {
 <template>
   <v-card class="mb-3 deal-card" elevation="2">
     <v-card-text class="pa-3">
-      <div class="d-flex justify-space-between align-center mb-1">
-        <h4 class="text-subtitle-1 font-weight-bold text-truncate" style="max-width: 150px;">
-          {{ deal.title }}
-        </h4>
+      <div class="d-flex justify-space-between align-start mb-1">
+        <div class="d-flex align-center">
+          <v-icon size="small" color="primary" class="mr-2">mdi-briefcase-variant-outline</v-icon>
+          <h4 class="text-subtitle-1 font-weight-bold text-truncate" style="max-width: 150px;">
+            {{ deal.title }}
+          </h4>
+        </div>
         <v-chip size="x-small" :color="deal.stage?.color || 'primary'" variant="flat">
           {{ deal.probability }}%
         </v-chip>

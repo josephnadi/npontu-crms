@@ -55,6 +55,8 @@ const submit = () => {
                   label="Deal Title"
                   required
                   :error-messages="form.errors.title"
+                  variant="outlined"
+                  prepend-inner-icon="mdi-briefcase-outline"
                 ></v-text-field>
               </v-col>
 
@@ -66,6 +68,8 @@ const submit = () => {
                   prefix="$"
                   required
                   :error-messages="form.errors.value"
+                  variant="outlined"
+                  prepend-inner-icon="mdi-currency-usd"
                 ></v-text-field>
               </v-col>
 
@@ -78,6 +82,8 @@ const submit = () => {
                   label="Stage"
                   required
                   :error-messages="form.errors.deal_stage_id"
+                  variant="outlined"
+                  prepend-inner-icon="mdi-stairs-up"
                 ></v-select>
               </v-col>
 
@@ -91,6 +97,7 @@ const submit = () => {
                   step="5"
                   color="primary"
                   :error-messages="form.errors.probability"
+                  prepend-icon="mdi-percent-outline"
                 ></v-slider>
               </v-col>
 
@@ -101,6 +108,8 @@ const submit = () => {
                   label="Status"
                   required
                   :error-messages="form.errors.status"
+                  variant="outlined"
+                  prepend-inner-icon="mdi-list-status"
                 ></v-select>
               </v-col>
 
@@ -109,14 +118,18 @@ const submit = () => {
                   v-model="form.contact_name"
                   label="Contact Name"
                   :error-messages="form.errors.contact_name"
+                  variant="outlined"
+                  prepend-inner-icon="mdi-account-outline"
                 ></v-text-field>
               </v-col>
 
               <v-col cols="12" md="6">
                 <v-text-field
                   v-model="form.client_name"
-                  label="Client/Company"
+                  label="Client / Company"
                   :error-messages="form.errors.client_name"
+                  variant="outlined"
+                  prepend-inner-icon="mdi-office-building-outline"
                 ></v-text-field>
               </v-col>
 
@@ -126,6 +139,8 @@ const submit = () => {
                   label="Expected Close Date"
                   type="date"
                   :error-messages="form.errors.expected_close_date"
+                  variant="outlined"
+                  prepend-inner-icon="mdi-calendar-clock"
                 ></v-text-field>
               </v-col>
 

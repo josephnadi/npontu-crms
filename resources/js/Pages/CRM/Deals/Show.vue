@@ -2,6 +2,8 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import DashboardLayout from '@/layouts/dashboard/DashboardLayout.vue';
 import SvgSprite from '@/components/shared/SvgSprite.vue';
+import ActivityTimeline from '@/components/CRM/ActivityTimeline.vue';
+import ActivityForm from '@/components/CRM/ActivityForm.vue';
 
 const props = defineProps({
   deal: {
@@ -38,9 +40,9 @@ const deleteDeal = () => {
   
   <DashboardLayout>
     <v-row justify="center">
-      <v-col cols="12" lg="8">
+      <v-col cols="12" md="8">
         <div class="mb-6 d-flex align-center">
-          <Link :href="route('crm.deals.pipeline')" class="mr-4">
+          <Link :href="route('crm.deals.index')" class="mr-4">
             <v-btn icon variant="text">
               <SvgSprite name="custom-chevron-left" style="width: 20px; height: 20px" />
             </v-btn>
@@ -48,7 +50,7 @@ const deleteDeal = () => {
           <h2 class="text-h4 font-weight-bold">Deal Details</h2>
         </div>
 
-        <v-card class="pa-6">
+        <v-card class="pa-6 mb-6">
           <v-row>
             <v-col cols="12" class="d-flex justify-space-between align-start">
               <div>
@@ -115,6 +117,20 @@ const deleteDeal = () => {
             </v-col>
           </v-row>
         </v-card>
+
+        <v-card class="pa-6">
+          <div class="d-flex justify-space-between align-center mb-4">
+            <h3 class="text-h5 font-weight-bold">Log Activity</h3>
+          </div>
+          <ActivityForm :activityable-type="'App\\Models\\Deal'" :activityable-id="deal.id" />
+        </v-card>
+      </v-col>
+
+      <v-col cols="12" md="4">
+        <div class="mb-6">
+          <h3 class="text-h5 font-weight-bold">Activity Timeline</h3>
+        </div>
+        <ActivityTimeline :activities="deal.activities || []" />
       </v-col>
     </v-row>
   </DashboardLayout>

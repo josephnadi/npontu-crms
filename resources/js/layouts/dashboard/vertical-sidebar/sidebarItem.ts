@@ -44,6 +44,11 @@ const sidebarItem: menu[] = [
     icon: 'custom-briefcase',
     to: '/crm/deals-pipeline'
   },
+  {
+    title: 'Activities',
+    icon: 'custom-calendar',
+    to: '/crm/activities'
+  },
   { header: 'Pages' },
   {
     title: 'Login',
