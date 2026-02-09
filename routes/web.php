@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\CRM\DealController;
 use App\Http\Controllers\CRM\ActivityController;
+use App\Http\Controllers\CRM\DashboardController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -29,7 +30,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // Main dashboard at /dashboard (and / for convenience)
-    Route::get('/dashboard', fn () => Inertia::render('Dashboard/Default'))->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/', fn () => redirect()->route('dashboard'));
 
     // Legacy URL: redirect to main dashboard

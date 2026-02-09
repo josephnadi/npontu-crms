@@ -16,11 +16,21 @@ export interface menu {
 }
 
 const sidebarItem: menu[] = [
-  { header: 'Dashboard' },
+  { header: 'CRM' },
   {
-    title: 'Dashboard',
+    title: 'CRM Dashboard',
     icon: 'custom-home-trend',
     to: '/dashboard'
+  },
+  {
+    title: 'Deals',
+    icon: 'custom-briefcase',
+    to: '/crm/deals-pipeline'
+  },
+  {
+    title: 'Activities',
+    icon: 'custom-calendar',
+    to: '/crm/activities'
   },
   { header: 'Utilities' },
   {
@@ -37,17 +47,6 @@ const sidebarItem: menu[] = [
     title: 'Shadows',
     icon: 'custom-shadow',
     to: '/utils/shadows'
-  },
-  { header: 'CRM' },
-  {
-    title: 'Deals',
-    icon: 'custom-briefcase',
-    to: '/crm/deals-pipeline'
-  },
-  {
-    title: 'Activities',
-    icon: 'custom-calendar',
-    to: '/crm/activities'
   },
   { header: 'Pages' },
   {
