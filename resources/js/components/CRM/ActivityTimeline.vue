@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue';
+import { router } from '@inertiajs/vue3';
 import SvgSprite from '@/components/shared/SvgSprite.vue';
 
 const props = defineProps({
@@ -8,6 +9,23 @@ const props = defineProps({
     required: true
   }
 });
+
+const deleteActivity = (id) => {
+  if (confirm('Are you sure you want to delete this activity?')) {
+    router.delete(window.route('crm.activities.destroy', id), {
+      preserveScroll: true
+    });
+  }
+};
+
+const markAsCompleted = (activity) => {
+  router.put(window.route('crm.activities.update', activity.id), {
+    ...activity,
+    status: 'completed'
+  }, {
+    preserveScroll: true
+  });
+};
 
 const getIcon = (type) => {
   switch (type) {
@@ -61,9 +79,29 @@ const formatDate = (date) => {
             <SvgSprite :name="getIcon(activity.type)" style="width: 16px; height: 16px; color: white" />
           </template>
           
-          <div class="d-flex justify-space-between align-center mb-1">
-            <h4 class="text-subtitle-1 font-weight-bold">{{ activity.subject }}</h4>
-            <span class="text-caption text-grey">{{ formatDate(activity.activity_date) }}</span>
+          <div class="d-flex justify-space-between align-start mb-1">
+            <div>
+              <h4 class="text-subtitle-1 font-weight-bold">{{ activity.subject }}</h4>
+              <span class="text-caption text-grey">{{ formatDate(activity.activity_date) }}</span>
+            </div>
+            <v-menu>
+              <template v-slot:activator="{ props }">
+                <v-btn icon="mdi-dots-vertical" variant="text" size="small" v-bind="props"></v-btn>
+              </template>
+              <v-list size="small">
+                <v-list-item 
+                  v-if="activity.status === 'pending'"
+                  @click="markAsCompleted(activity)" 
+                  prepend-icon="mdi-check"
+                  color="success"
+                >
+                  <v-list-item-title>Mark Completed</v-list-item-title>
+                </v-list-item>
+                <v-list-item @click="deleteActivity(activity.id)" prepend-icon="mdi-delete" color="error">
+                  <v-list-item-title>Delete</v-list-item-title>
+                </v-list-item>
+              </v-list>
+            </v-menu>
           </div>
           
           <p class="text-body-2 mb-2">{{ activity.description }}</p>

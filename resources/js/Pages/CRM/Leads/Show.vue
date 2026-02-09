@@ -2,6 +2,8 @@
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import DashboardLayout from '@/layouts/dashboard/DashboardLayout.vue';
 import { ref } from 'vue';
+import ActivityTimeline from '@/components/CRM/ActivityTimeline.vue';
+import ActivityForm from '@/components/CRM/ActivityForm.vue';
 
 const props = defineProps({
   lead: Object,
@@ -9,6 +11,7 @@ const props = defineProps({
 });
 
 const showConvertModal = ref(false);
+const showActivityModal = ref(false);
 
 const convertForm = useForm({
   create_client: true,
@@ -147,19 +150,43 @@ const getStatusColor = (status) => {
       <!-- Main Content -->
       <v-col cols="12" md="8">
         <v-card elevation="0" border class="mb-6">
-          <v-card-item title="Activity Timeline"></v-card-item>
+          <v-card-item title="Activity Timeline">
+            <template v-slot:append>
+              <v-btn
+                color="primary"
+                size="small"
+                variant="flat"
+                prepend-icon="mdi-plus"
+                @click="showActivityModal = true"
+              >
+                Log Activity
+              </v-btn>
+            </template>
+          </v-card-item>
           <v-divider></v-divider>
-          <v-card-text class="pa-8">
-            <!-- Timeline will go here - reuse ActivityTimeline if available -->
-            <div class="text-center text-medium-emphasis">
-              <v-icon size="48" class="mb-2">mdi-history</v-icon>
-              <p>No recent activities for this lead.</p>
-              <v-btn variant="text" color="primary" prepend-icon="mdi-plus">Log Activity</v-btn>
-            </div>
+          <v-card-text class="pa-4">
+            <ActivityTimeline :activities="lead.activities" />
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
+
+    <!-- Log Activity Modal -->
+    <v-dialog v-model="showActivityModal" max-width="600px">
+      <v-card>
+        <v-card-title class="pa-4 bg-primary text-white d-flex justify-space-between align-center">
+          <span>Log New Activity</span>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="showActivityModal = false"></v-btn>
+        </v-card-title>
+        <v-card-text class="pa-4 pt-6">
+          <ActivityForm 
+            activityable-type="App\Models\Lead" 
+            :activityable-id="lead.id"
+            @success="showActivityModal = false"
+          />
+        </v-card-text>
+      </v-card>
+    </v-dialog>
 
     <!-- Convert Lead Modal -->
     <v-dialog v-model="showConvertModal" max-width="600px">
@@ -195,12 +222,12 @@ const getStatusColor = (status) => {
               <v-row>
                 <v-col cols="6">
                   <v-text-field
-                    v-model="convertForm.deal_value"
-                    label="Deal Value"
-                    type="number"
-                    prefix="$"
-                    variant="outlined"
-                  ></v-text-field>
+  v-model="convertForm.deal_value"
+  label="Deal Value"
+  type="number"
+  prefix="GH₵"
+  variant="outlined"
+></v-text-field>
                 </v-col>
                 <v-col cols="6">
                   <v-select

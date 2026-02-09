@@ -11,9 +11,9 @@ const props = defineProps({
 });
 
 const formatCurrency = (value) => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-GH', {
     style: 'currency',
-    currency: 'USD'
+    currency: 'GHS'
   }).format(value);
 };
 
@@ -91,7 +91,14 @@ const deleteDeal = (id) => {
                   ></v-progress-linear>
                   <span class="text-caption">{{ deal.probability }}%</span>
                 </td>
-                <td>{{ deal.contact_name || 'N/A' }}</td>
+                <td>
+                  <template v-if="deal.contact">
+                    <Link :href="route('crm.contacts.show', deal.contact.id)" class="text-primary text-decoration-none font-weight-medium">
+                      {{ deal.contact.first_name }} {{ deal.contact.last_name }}
+                    </Link>
+                  </template>
+                  <span v-else>{{ deal.contact_name || 'N/A' }}</span>
+                </td>
                 <td>{{ formatDate(deal.expected_close_date) }}</td>
                 <td class="text-right">
                   <v-menu>
@@ -99,12 +106,12 @@ const deleteDeal = (id) => {
                       <v-btn icon="mdi-dots-vertical" variant="text" size="small" v-bind="props"></v-btn>
                     </template>
                     <v-list size="small">
-                      <v-list-item :href="route('crm.deals.show', deal.id)" title="View Details">
+                      <v-list-item @click="router.get(route('crm.deals.show', deal.id))" title="View Details">
                         <template v-slot:prepend>
                           <v-icon icon="mdi-eye-outline"></v-icon>
                         </template>
                       </v-list-item>
-                      <v-list-item :href="route('crm.deals.edit', deal.id)" title="Edit">
+                      <v-list-item @click="router.get(route('crm.deals.edit', deal.id))" title="Edit">
                         <template v-slot:prepend>
                           <v-icon icon="mdi-pencil-outline"></v-icon>
                         </template>

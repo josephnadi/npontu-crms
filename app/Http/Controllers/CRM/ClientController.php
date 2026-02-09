@@ -57,7 +57,9 @@ class ClientController extends Controller
 
     public function show(Client $client)
     {
-        $client->load(['contacts', 'owner']);
+        $client->load(['contacts', 'owner', 'deals.stage', 'activities' => function($query) {
+            $query->orderBy('activity_date', 'desc')->with('owner');
+        }]);
         
         return Inertia::render('CRM/Clients/Show', [
             'client' => $client

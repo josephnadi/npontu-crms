@@ -2,11 +2,24 @@
 import { Head, useForm, Link } from '@inertiajs/vue3';
 import DashboardLayout from '@/layouts/dashboard/DashboardLayout.vue';
 import SvgSprite from '@/components/shared/SvgSprite.vue';
+import { computed } from 'vue';
 
 const props = defineProps({
   deals: {
     type: Array,
     required: true
+  },
+  leads: {
+    type: Array,
+    default: () => []
+  },
+  contacts: {
+    type: Array,
+    default: () => []
+  },
+  clients: {
+    type: Array,
+    default: () => []
   }
 });
 
@@ -21,7 +34,14 @@ const form = useForm({
   activityable_id: null,
 });
 
-const types = [
+const entityTypes = [
+  { title: 'Deal', value: 'App\\Models\\Deal' },
+  { title: 'Lead', value: 'App\\Models\\Lead' },
+  { title: 'Contact', value: 'App\\Models\\Contact' },
+  { title: 'Client', value: 'App\\Models\\Client' },
+];
+
+const activityTypes = [
   { title: 'Call', value: 'call' },
   { title: 'Meeting', value: 'meeting' },
   { title: 'Email', value: 'email' },
@@ -29,10 +49,25 @@ const types = [
   { title: 'Note', value: 'note' },
 ];
 
+const availableEntities = computed(() => {
+  switch (form.activityable_type) {
+    case 'App\\Models\\Deal':
+      return props.deals.map(d => ({ title: d.title, value: d.id }));
+    case 'App\\Models\\Lead':
+      return props.leads.map(l => ({ title: `${l.first_name} ${l.last_name}`, value: l.id }));
+    case 'App\\Models\\Contact':
+      return props.contacts.map(c => ({ title: `${c.first_name} ${c.last_name}`, value: c.id }));
+    case 'App\\Models\\Client':
+      return props.clients.map(c => ({ title: c.name, value: c.id }));
+    default:
+      return [];
+  }
+});
+
 const submit = () => {
   form.post(window.route('crm.activities.store'), {
     onSuccess: () => {
-      // Redirect to index or calendar
+      // Success logic
     },
   });
 };
@@ -59,7 +94,7 @@ const submit = () => {
               <v-col cols="12" md="6">
                 <v-select
                   v-model="form.type"
-                  :items="types"
+                  :items="activityTypes"
                   label="Activity Type"
                   required
                   :error-messages="form.errors.type"
@@ -80,18 +115,30 @@ const submit = () => {
                 ></v-text-field>
               </v-col>
 
-              <v-col cols="12">
+              <v-col cols="12" md="6">
                 <v-select
+                  v-model="form.activityable_type"
+                  :items="entityTypes"
+                  label="Relate To"
+                  required
+                  :error-messages="form.errors.activityable_type"
+                  variant="outlined"
+                  prepend-inner-icon="mdi-link-variant"
+                  @update:model-value="form.activityable_id = null"
+                ></v-select>
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-autocomplete
                   v-model="form.activityable_id"
-                  :items="deals"
-                  item-title="title"
-                  item-value="id"
-                  label="Relate to Deal"
+                  :items="availableEntities"
+                  label="Select Entity"
                   required
                   :error-messages="form.errors.activityable_id"
                   variant="outlined"
-                  prepend-inner-icon="mdi-link-variant"
-                ></v-select>
+                  prepend-inner-icon="mdi-magnify"
+                  :disabled="!form.activityable_type"
+                ></v-autocomplete>
               </v-col>
 
               <v-col cols="12">

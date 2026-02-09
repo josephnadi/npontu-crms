@@ -24,7 +24,7 @@ const sidebarItem: menu[] = [
   },
   {
     title: 'Deals',
-    icon: 'custom-briefcase',
+    icon: 'custom-dollar-square',
     to: '/crm/deals-pipeline'
   },
   {
@@ -33,10 +33,15 @@ const sidebarItem: menu[] = [
     to: '/crm/leads'
   },
   {
-    title: 'Clients',
-    icon: 'custom-user-fill',
-    to: '/crm/clients'
-  },
+      title: 'Clients',
+      icon: 'custom-user-fill',
+      to: '/crm/clients'
+    },
+    {
+      title: 'Contacts',
+      icon: 'custom-users',
+      to: '/crm/contacts'
+    },
   {
     title: 'Activities',
     icon: 'custom-calendar',

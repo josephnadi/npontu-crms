@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('title', 255);
             $table->text('description')->nullable();
             $table->decimal('value', 15, 2)->default(0);
-            $table->string('currency', 3)->default('USD');
+            $table->string('currency', 3)->default('GHS');
             
             $table->foreignId('deal_stage_id')->constrained();
             $table->string('contact_name')->nullable(); // Temporary until contacts table exists

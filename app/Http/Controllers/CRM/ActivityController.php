@@ -28,7 +28,10 @@ class ActivityController extends Controller
     public function create()
     {
         return Inertia::render('CRM/Activities/Create', [
-            'deals' => \App\Models\Deal::all(['id', 'title']),
+            'deals' => \App\Models\Deal::orderBy('title')->get(['id', 'title']),
+            'leads' => \App\Models\Lead::orderBy('first_name')->get(['id', 'first_name', 'last_name']),
+            'contacts' => \App\Models\Contact::orderBy('first_name')->get(['id', 'first_name', 'last_name']),
+            'clients' => \App\Models\Client::orderBy('name')->get(['id', 'name']),
         ]);
     }
 

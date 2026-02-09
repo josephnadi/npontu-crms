@@ -1,5 +1,5 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import DashboardLayout from '@/layouts/dashboard/DashboardLayout.vue';
 import SvgSprite from '@/components/shared/SvgSprite.vue';
 import { computed } from 'vue';
@@ -12,9 +12,9 @@ const props = defineProps({
 });
 
 const formatCurrency = (value) => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-GH', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'GHS',
   }).format(value);
 };
 
@@ -135,14 +135,14 @@ const getColor = (type) => {
 
       <!-- Stat Cards -->
       <v-col cols="12" sm="6" lg="3">
-        <v-card class="pa-4" elevation="0" border>
+        <v-card class="pa-4 stat-card" elevation="0" border>
           <div class="d-flex align-center mb-2">
-            <v-avatar color="blue-lighten-5" size="40" class="mr-3">
+            <v-avatar color="blue-lighten-5" size="40" class="mr-3 icon-avatar">
               <v-icon color="primary">mdi-account-group</v-icon>
             </v-avatar>
             <span class="text-subtitle-2 font-weight-medium">Total Contacts</span>
           </div>
-          <div class="text-h4 font-weight-bold">{{ metrics.totalContacts }}</div>
+          <div class="text-h4 font-weight-bold counter-value">{{ metrics.totalContacts }}</div>
           <div class="text-caption text-success mt-1">
             <v-icon size="small">mdi-trending-up</v-icon> 12% from last month
           </div>
@@ -150,14 +150,14 @@ const getColor = (type) => {
       </v-col>
 
       <v-col cols="12" sm="6" lg="3">
-        <v-card class="pa-4" elevation="0" border>
+        <v-card class="pa-4 stat-card" elevation="0" border>
           <div class="d-flex align-center mb-2">
-            <v-avatar color="green-lighten-5" size="40" class="mr-3">
+            <v-avatar color="green-lighten-5" size="40" class="mr-3 icon-avatar">
               <v-icon color="success">mdi-briefcase-check</v-icon>
             </v-avatar>
             <span class="text-subtitle-2 font-weight-medium">Open Deals</span>
           </div>
-          <div class="text-h4 font-weight-bold">{{ metrics.openDeals }}</div>
+          <div class="text-h4 font-weight-bold counter-value">{{ metrics.openDeals }}</div>
           <div class="text-caption text-success mt-1">
             <v-icon size="small">mdi-trending-up</v-icon> 5 new this week
           </div>
@@ -165,14 +165,14 @@ const getColor = (type) => {
       </v-col>
 
       <v-col cols="12" sm="6" lg="3">
-        <v-card class="pa-4" elevation="0" border>
+        <v-card class="pa-4 stat-card" elevation="0" border>
           <div class="d-flex align-center mb-2">
-            <v-avatar color="orange-lighten-5" size="40" class="mr-3">
+            <v-avatar color="orange-lighten-5" size="40" class="mr-3 icon-avatar">
               <v-icon color="warning">mdi-currency-usd</v-icon>
             </v-avatar>
             <span class="text-subtitle-2 font-weight-medium">Pipeline Value</span>
           </div>
-          <div class="text-h4 font-weight-bold">{{ formatCurrency(metrics.totalValue) }}</div>
+          <div class="text-h4 font-weight-bold counter-value">{{ formatCurrency(metrics.totalValue) }}</div>
           <div class="text-caption text-warning mt-1">
             Expected by end of quarter
           </div>
@@ -180,14 +180,14 @@ const getColor = (type) => {
       </v-col>
 
       <v-col cols="12" sm="6" lg="3">
-        <v-card class="pa-4" elevation="0" border>
+        <v-card class="pa-4 stat-card" elevation="0" border>
           <div class="d-flex align-center mb-2">
-            <v-avatar color="purple-lighten-5" size="40" class="mr-3">
+            <v-avatar color="purple-lighten-5" size="40" class="mr-3 icon-avatar">
               <v-icon color="secondary">mdi-calendar-clock</v-icon>
             </v-avatar>
             <span class="text-subtitle-2 font-weight-medium">Pending Tasks</span>
           </div>
-          <div class="text-h4 font-weight-bold">{{ metrics.pendingActivities }}</div>
+          <div class="text-h4 font-weight-bold counter-value">{{ metrics.pendingActivities }}</div>
           <div class="text-caption text-error mt-1">
             3 overdue items
           </div>
@@ -261,11 +261,31 @@ const getColor = (type) => {
               </v-list-item-subtitle>
 
               <template v-slot:append>
-                <div class="text-right">
-                  <div class="text-caption font-weight-medium">{{ formatDate(activity.created_at) }}</div>
-                  <v-chip size="x-small" :color="activity.status === 'completed' ? 'success' : 'warning'" variant="flat" class="mt-1">
-                    {{ activity.status }}
-                  </v-chip>
+                <div class="d-flex align-center">
+                  <div class="text-right mr-3">
+                    <div class="text-caption font-weight-medium">{{ formatDate(activity.created_at) }}</div>
+                    <v-chip size="x-small" :color="activity.status === 'completed' ? 'success' : 'warning'" variant="flat" class="mt-1">
+                      {{ activity.status }}
+                    </v-chip>
+                  </div>
+                  <v-menu>
+                    <template v-slot:activator="{ props }">
+                      <v-btn icon="mdi-dots-vertical" variant="text" size="small" v-bind="props"></v-btn>
+                    </template>
+                    <v-list size="small">
+                      <v-list-item 
+                        v-if="activity.status === 'pending'"
+                        @click="router.put(route('crm.activities.update', activity.id), { ...activity, status: 'completed' })" 
+                        prepend-icon="mdi-check"
+                        color="success"
+                      >
+                        <v-list-item-title>Mark Completed</v-list-item-title>
+                      </v-list-item>
+                      <v-list-item @click="router.delete(route('crm.activities.destroy', activity.id))" prepend-icon="mdi-delete" color="error">
+                        <v-list-item-title>Delete</v-list-item-title>
+                      </v-list-item>
+                    </v-list>
+                  </v-menu>
                 </div>
               </template>
             </v-list-item>
@@ -283,5 +303,51 @@ const getColor = (type) => {
 <style scoped>
 .gap-2 {
   gap: 8px;
+}
+
+.stat-card {
+  transition: all 0.3s ease-in-out;
+  position: relative;
+  overflow: hidden;
+  animation: slideUp 0.6s ease-out backwards;
+}
+
+.stat-card:nth-child(1) { animation-delay: 0.1s; }
+.stat-card:nth-child(2) { animation-delay: 0.2s; }
+.stat-card:nth-child(3) { animation-delay: 0.3s; }
+.stat-card:nth-child(4) { animation-delay: 0.4s; }
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+  border-color: rgb(var(--v-theme-primary)) !important;
+}
+
+.icon-avatar {
+  transition: transform 0.3s ease;
+}
+
+.stat-card:hover .icon-avatar {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.counter-value {
+  animation: fadeIn 1s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 </style>

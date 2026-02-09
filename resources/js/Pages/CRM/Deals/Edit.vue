@@ -11,19 +11,31 @@ const props = defineProps({
   stages: {
     type: Array,
     required: true
+  },
+  contacts: {
+    type: Array,
+    default: () => []
+  },
+  clients: {
+    type: Array,
+    default: () => []
   }
 });
 
 const form = useForm({
   title: props.deal.title,
+  description: props.deal.description,
   value: props.deal.value,
-  currency: props.deal.currency || 'USD',
+  currency: props.deal.currency || 'GHS',
   deal_stage_id: props.deal.deal_stage_id,
   probability: props.deal.probability,
+  contact_id: props.deal.contact_id,
+  client_id: props.deal.client_id,
   contact_name: props.deal.contact_name,
   client_name: props.deal.client_name,
   expected_close_date: props.deal.expected_close_date ? props.deal.expected_close_date.split(' ')[0] : '',
-  status: props.deal.status || 'open'
+  status: props.deal.status || 'open',
+  lost_reason: props.deal.lost_reason
 });
 
 const submit = () => {
@@ -60,17 +72,28 @@ const submit = () => {
                 ></v-text-field>
               </v-col>
 
+              <v-col cols="12">
+                <v-textarea
+                  v-model="form.description"
+                  label="Description"
+                  :error-messages="form.errors.description"
+                  variant="outlined"
+                  rows="3"
+                  prepend-inner-icon="mdi-text-box-outline"
+                ></v-textarea>
+              </v-col>
+
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="form.value"
-                  label="Value"
-                  type="number"
-                  prefix="$"
-                  required
-                  :error-messages="form.errors.value"
-                  variant="outlined"
-                  prepend-inner-icon="mdi-currency-usd"
-                ></v-text-field>
+  v-model="form.value"
+  label="Value"
+  type="number"
+  prefix="GH₵"
+  required
+  :error-messages="form.errors.value"
+  variant="outlined"
+  prepend-inner-icon="mdi-cash"
+></v-text-field>
               </v-col>
 
               <v-col cols="12" md="6">
@@ -113,24 +136,43 @@ const submit = () => {
                 ></v-select>
               </v-col>
 
-              <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="form.contact_name"
-                  label="Contact Name"
-                  :error-messages="form.errors.contact_name"
+              <v-col cols="12" v-if="form.status === 'lost'">
+                <v-textarea
+                  v-model="form.lost_reason"
+                  label="Reason for Loss"
+                  :error-messages="form.errors.lost_reason"
                   variant="outlined"
-                  prepend-inner-icon="mdi-account-outline"
-                ></v-text-field>
+                  rows="2"
+                  prepend-inner-icon="mdi-comment-question-outline"
+                ></v-textarea>
               </v-col>
 
               <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="form.client_name"
+                <v-autocomplete
+                  v-model="form.contact_id"
+                  :items="contacts"
+                  :item-title="item => `${item.first_name} ${item.last_name}`"
+                  item-value="id"
+                  label="Contact"
+                  :error-messages="form.errors.contact_id"
+                  variant="outlined"
+                  prepend-inner-icon="mdi-account-outline"
+                  clearable
+                ></v-autocomplete>
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-autocomplete
+                  v-model="form.client_id"
+                  :items="clients"
+                  item-title="name"
+                  item-value="id"
                   label="Client / Company"
-                  :error-messages="form.errors.client_name"
+                  :error-messages="form.errors.client_id"
                   variant="outlined"
                   prepend-inner-icon="mdi-office-building-outline"
-                ></v-text-field>
+                  clearable
+                ></v-autocomplete>
               </v-col>
 
               <v-col cols="12">

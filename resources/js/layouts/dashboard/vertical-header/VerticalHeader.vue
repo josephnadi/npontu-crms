@@ -75,6 +75,18 @@ watch(priority, (newPriority) => {
     <!---right part -->
     <!-- ---------------------------------------------- -->
 
+    <!-- Theme Toggle -->
+    <v-btn
+      icon
+      variant="text"
+      color="secondary"
+      class="me-2"
+      rounded="sm"
+      @click="customizer.SET_THEME(customizer.actTheme === 'light' ? 'dark' : 'light')"
+    >
+      <SvgSprite :name="customizer.actTheme === 'dark' ? 'custom-sun-1' : 'custom-moon'" style="width: 20px; height: 20px" />
+    </v-btn>
+
     <!-- ---------------------------------------------- -->
     <!-- Notification -->
     <!-- ---------------------------------------------- -->

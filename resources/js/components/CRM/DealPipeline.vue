@@ -46,9 +46,9 @@ const onMove = (evt) => {
 const getStageTotal = (stageId) => {
   const deals = localDealsByStage.value[stageId] || [];
   const total = deals.reduce((sum, deal) => sum + parseFloat(deal.value), 0);
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-GH', {
     style: 'currency',
-    currency: 'USD'
+    currency: 'GHS'
   }).format(total);
 };
 </script>

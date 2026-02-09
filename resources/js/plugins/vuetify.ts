@@ -53,6 +53,56 @@ const light: ThemeDefinition = {
   }
 };
 
+const dark: ThemeDefinition = {
+  dark: true,
+  colors: {
+    primary: '#4680FF',
+    secondary: '#5B6B79',
+    info: '#3ec9d6',
+    success: '#2ca87f',
+    warning: '#e58a00',
+    error: '#dc2626',
+    lightprimary: '#212946',
+    lightsecondary: '#1d2630',
+    lightsuccess: '#1a3e33',
+    lightinfo: '#1c454a',
+    lighterror: '#442626',
+    lightwarning: '#44311b',
+    darkText: '#fff',
+    lightText: '#BEC8D0',
+    darkprimary: '#3F78FF',
+    darksecondary: '#3E4853',
+    darkinfo: '#30bccc',
+    darksuccess: '#21976c',
+    darkwarning: '#de7700',
+    darkerror: '#d31c1c',
+    borderLight: '#333d48',
+    inputBorder: '#4d5969',
+    containerBg: '#111936',
+    surface: '#1d2630',
+    'on-surface-variant': '#1d2630',
+    facebook: '#4267b2',
+    twitter: '#1da1f2',
+    linkedin: '#0e76a8',
+    gray100: '#111936',
+    primary200: '#b8ceff',
+    secondary200: '#d8dadd',
+    warning200: '#faaf00'
+  },
+  variables: {
+    'border-color': '#333d48',
+    'carousel-control-size': 10,
+    gradient: 'linear-gradient(to right, rgb(var(--v-theme-darkprimary)), rgb(var(--v-theme-primary)))',
+    'card-shadow': '0 8px 24px rgba(0,0,0,0.2)',
+    'sidebar-shadow': '0px 8px 24px rgba(0, 0, 0, 0.2)',
+    'shadow-key-umbra-color': '#000000',
+    'high-opacity': 1,
+    'medium-opacity': 0.85,
+    'half-opacity': 0.5,
+    'shadow-opacity': 0.08
+  }
+};
+
 export default createVuetify({
   components,
   directives,
@@ -68,7 +118,8 @@ export default createVuetify({
   theme: {
     defaultTheme: 'light',
     themes: {
-      light
+      light,
+      dark
     }
   },
   defaults: {

@@ -94,10 +94,10 @@ const deleteClient = (id) => {
                       <v-btn icon="mdi-dots-vertical" variant="text" size="small" v-bind="props"></v-btn>
                     </template>
                     <v-list size="small">
-                      <v-list-item :to="route('crm.clients.show', client.id)" prepend-icon="mdi-eye">
+                      <v-list-item @click="router.get(route('crm.clients.show', client.id))" prepend-icon="mdi-eye">
                         <v-list-item-title>View</v-list-item-title>
                       </v-list-item>
-                      <v-list-item :to="route('crm.clients.edit', client.id)" prepend-icon="mdi-pencil">
+                      <v-list-item @click="router.get(route('crm.clients.edit', client.id))" prepend-icon="mdi-pencil">
                         <v-list-item-title>Edit</v-list-item-title>
                       </v-list-item>
                       <v-divider></v-divider>

@@ -12,7 +12,7 @@ class Deal extends Model
 
     protected $fillable = [
         'title', 'description', 'value', 'currency', 'deal_stage_id',
-        'contact_name', 'client_name', 'expected_close_date',
+        'contact_id', 'client_id', 'contact_name', 'client_name', 'expected_close_date',
         'actual_close_date', 'probability', 'status', 'lost_reason',
         'tags', 'custom_fields', 'owner_id', 'created_by', 'updated_by'
     ];
@@ -27,6 +27,16 @@ class Deal extends Model
     public function stage()
     {
         return $this->belongsTo(DealStage::class, 'deal_stage_id');
+    }
+
+    public function contact()
+    {
+        return $this->belongsTo(Contact::class);
+    }
+
+    public function client()
+    {
+        return $this->belongsTo(Client::class);
     }
 
     public function owner()

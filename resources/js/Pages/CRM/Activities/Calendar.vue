@@ -59,8 +59,13 @@ const formatTime = (date) => {
 const getEntityLink = (activity) => {
   if (!activity.activityable) return '#';
   const type = activity.activityable_type.split('\\').pop().toLowerCase();
-  if (type === 'deal') return window.route('crm.deals.show', activity.activityable_id);
-  return '#';
+  switch (type) {
+    case 'deal': return window.route('crm.deals.show', activity.activityable_id);
+    case 'lead': return window.route('crm.leads.show', activity.activityable_id);
+    case 'contact': return window.route('crm.contacts.show', activity.activityable_id);
+    case 'client': return window.route('crm.clients.show', activity.activityable_id);
+    default: return '#';
+  }
 };
 
 const getEntityName = (activity) => {

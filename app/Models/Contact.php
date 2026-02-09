@@ -46,4 +46,14 @@ class Contact extends Model
     {
         return "{$this->first_name} {$this->last_name}";
     }
+
+    public function activities()
+    {
+        return $this->morphMany(Activity::class, 'activityable');
+    }
+
+    public function deals()
+    {
+        return $this->hasMany(Deal::class);
+    }
 }

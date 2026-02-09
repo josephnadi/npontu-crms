@@ -65,7 +65,9 @@ class LeadController extends Controller
 
     public function show(Lead $lead)
     {
-        $lead->load(['owner', 'activities']);
+        $lead->load(['owner', 'activities' => function($query) {
+            $query->orderBy('activity_date', 'desc')->with('owner');
+        }]);
         return Inertia::render('CRM/Leads/Show', [
             'lead' => $lead,
             'dealStages' => DealStage::orderBy('order')->get(),
@@ -145,7 +147,7 @@ class LeadController extends Controller
                     Deal::create([
                         'title' => $request->deal_title,
                         'value' => $request->deal_value,
-                        'currency' => 'USD',
+                        'currency' => 'GHS',
                         'deal_stage_id' => $request->deal_stage_id,
                         'contact_id' => $contact->id,
                         'client_id' => $clientId,

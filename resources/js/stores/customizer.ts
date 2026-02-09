@@ -12,6 +12,14 @@ export const useCustomizerStore = defineStore('customizer', () => {
   const inputBg = ref(config.inputBg);
   const boxed = ref(config.boxed);
 
+  // Initialize theme from localStorage if available
+  if (typeof window !== 'undefined') {
+    const savedTheme = localStorage.getItem('ablepro-theme');
+    if (savedTheme) {
+      actTheme.value = savedTheme;
+    }
+  }
+
   function SET_SIDEBAR_DRAWER() {
     Sidebar_drawer.value = !Sidebar_drawer.value;
   }
@@ -30,6 +38,9 @@ export const useCustomizerStore = defineStore('customizer', () => {
 
   function SET_THEME(payload: string) {
     actTheme.value = payload;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ablepro-theme', payload);
+    }
   }
 
   function SET_INPUTBG(payload: boolean) {

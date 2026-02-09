@@ -9,13 +9,25 @@ const props = defineProps({
   deal: {
     type: Object,
     required: true
+  },
+  stages: {
+    type: Array,
+    required: true
   }
 });
 
+const updateStage = (stageId) => {
+  router.put(window.route('crm.deals.updateStage', props.deal.id), {
+    deal_stage_id: stageId
+  }, {
+    preserveScroll: true
+  });
+};
+
 const formatCurrency = (value) => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-GH', {
     style: 'currency',
-    currency: 'USD'
+    currency: 'GHS'
   }).format(value);
 };
 
@@ -55,13 +67,52 @@ const deleteDeal = () => {
             <v-col cols="12" class="d-flex justify-space-between align-start">
               <div>
                 <h3 class="text-h5 font-weight-bold mb-1">{{ deal.title }}</h3>
-                <v-chip :color="deal.stage?.color || 'primary'" variant="tonal" size="small">
-                  {{ deal.stage?.name }} ({{ deal.probability }}%)
-                </v-chip>
+                <div class="d-flex align-center gap-2">
+                  <v-menu>
+                    <template v-slot:activator="{ props }">
+                      <v-chip 
+                        v-bind="props"
+                        :color="deal.stage?.color || 'primary'" 
+                        variant="tonal" 
+                        size="small"
+                        class="cursor-pointer"
+                      >
+                        {{ deal.stage?.name }} ({{ deal.probability }}%)
+                        <v-icon end size="x-small">mdi-chevron-down</v-icon>
+                      </v-chip>
+                    </template>
+                    <v-list density="compact">
+                      <v-list-item
+                        v-for="stage in stages"
+                        :key="stage.id"
+                        :value="stage.id"
+                        @click="updateStage(stage.id)"
+                        :active="stage.id === deal.deal_stage_id"
+                      >
+                        <v-list-item-title>{{ stage.name }}</v-list-item-title>
+                      </v-list-item>
+                    </v-list>
+                  </v-menu>
+                </div>
               </div>
               <div class="text-h5 font-weight-bold text-primary">
                 {{ formatCurrency(deal.value) }}
               </div>
+            </v-col>
+
+            <v-col cols="12" v-if="deal.description">
+              <div class="text-caption text-medium-emphasis mb-1">Description</div>
+              <p class="text-body-1">{{ deal.description }}</p>
+            </v-col>
+
+            <v-col cols="12" v-if="deal.status === 'lost' && deal.lost_reason">
+              <v-alert
+                type="error"
+                variant="tonal"
+                title="Deal Lost"
+                :text="deal.lost_reason"
+                class="mt-2"
+              ></v-alert>
             </v-col>
 
             <v-col cols="12">
@@ -73,7 +124,12 @@ const deleteDeal = () => {
                 <div class="text-caption text-medium-emphasis mb-1">Contact Person</div>
                 <div class="d-flex align-center">
                   <SvgSprite name="custom-user-fill" class="mr-2" style="width: 18px; height: 18px" />
-                  <span class="text-body-1">{{ deal.contact_name || 'Not assigned' }}</span>
+                  <template v-if="deal.contact">
+                    <Link :href="route('crm.contacts.show', deal.contact.id)" class="text-primary text-decoration-none font-weight-medium">
+                      {{ deal.contact.first_name }} {{ deal.contact.last_name }}
+                    </Link>
+                  </template>
+                  <span v-else class="text-body-1">{{ deal.contact_name || 'Not assigned' }}</span>
                 </div>
               </div>
               
@@ -81,7 +137,12 @@ const deleteDeal = () => {
                 <div class="text-caption text-medium-emphasis mb-1">Client/Company</div>
                 <div class="d-flex align-center">
                   <SvgSprite name="custom-building" class="mr-2" style="width: 18px; height: 18px" />
-                  <span class="text-body-1">{{ deal.client_name || 'Not assigned' }}</span>
+                  <template v-if="deal.client">
+                    <Link :href="route('crm.clients.show', deal.client.id)" class="text-primary text-decoration-none font-weight-medium">
+                      {{ deal.client.name }}
+                    </Link>
+                  </template>
+                  <span v-else class="text-body-1">{{ deal.client_name || 'Not assigned' }}</span>
                 </div>
               </div>
             </v-col>

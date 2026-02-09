@@ -7,13 +7,24 @@ const props = defineProps({
   stages: {
     type: Array,
     required: true
+  },
+  contacts: {
+    type: Array,
+    default: () => []
+  },
+  clients: {
+    type: Array,
+    default: () => []
   }
 });
 
 const form = useForm({
   title: '',
+  description: '',
   value: 0,
   deal_stage_id: props.stages[0]?.id || null,
+  contact_id: null,
+  client_id: null,
   contact_name: '',
   client_name: '',
   expected_close_date: null,
@@ -63,17 +74,28 @@ const updateProbability = () => {
                 ></v-text-field>
               </v-col>
 
+              <v-col cols="12">
+                <v-textarea
+                  v-model="form.description"
+                  label="Description"
+                  :error-messages="form.errors.description"
+                  variant="outlined"
+                  rows="3"
+                  prepend-inner-icon="mdi-text-box-outline"
+                ></v-textarea>
+              </v-col>
+
               <v-col cols="12" md="6">
                 <v-text-field
-                  v-model="form.value"
-                  label="Deal Value"
-                  type="number"
-                  prefix="$"
-                  :error-messages="form.errors.value"
-                  required
-                  variant="outlined"
-                  prepend-inner-icon="mdi-currency-usd"
-                ></v-text-field>
+  v-model="form.value"
+  label="Deal Value"
+  type="number"
+  prefix="GH₵"
+  :error-messages="form.errors.value"
+  required
+  variant="outlined"
+  prepend-inner-icon="mdi-cash"
+></v-text-field>
               </v-col>
 
               <v-col cols="12" md="6">
@@ -92,23 +114,31 @@ const updateProbability = () => {
               </v-col>
 
               <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="form.contact_name"
-                  label="Contact Name"
-                  :error-messages="form.errors.contact_name"
+                <v-autocomplete
+                  v-model="form.contact_id"
+                  :items="contacts"
+                  :item-title="item => `${item.first_name} ${item.last_name}`"
+                  item-value="id"
+                  label="Contact"
+                  :error-messages="form.errors.contact_id"
                   variant="outlined"
                   prepend-inner-icon="mdi-account-outline"
-                ></v-text-field>
+                  clearable
+                ></v-autocomplete>
               </v-col>
 
               <v-col cols="12" md="6">
-                <v-text-field
-                  v-model="form.client_name"
+                <v-autocomplete
+                  v-model="form.client_id"
+                  :items="clients"
+                  item-title="name"
+                  item-value="id"
                   label="Client / Company"
-                  :error-messages="form.errors.client_name"
+                  :error-messages="form.errors.client_id"
                   variant="outlined"
                   prepend-inner-icon="mdi-office-building-outline"
-                ></v-text-field>
+                  clearable
+                ></v-autocomplete>
               </v-col>
 
               <v-col cols="12">

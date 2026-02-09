@@ -33,4 +33,14 @@ class Client extends Model
     {
         return $this->belongsTo(User::class, 'owner_id');
     }
+
+    public function activities()
+    {
+        return $this->morphMany(Activity::class, 'activityable');
+    }
+
+    public function deals()
+    {
+        return $this->hasMany(Deal::class);
+    }
 }

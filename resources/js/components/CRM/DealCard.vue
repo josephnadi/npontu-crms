@@ -10,9 +10,9 @@ const props = defineProps({
 });
 
 const formatCurrency = (value) => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('en-GH', {
     style: 'currency',
-    currency: props.deal.currency || 'USD'
+    currency: props.deal.currency || 'GHS'
   }).format(value);
 };
 
@@ -39,7 +39,16 @@ const formatDate = (date) => {
       
       <div class="text-caption text-medium-emphasis mb-2">
         <SvgSprite name="custom-user-fill" class="mr-1" style="width: 14px; height: 14px; vertical-align: middle;" />
-        {{ deal.contact_name || 'No Contact' }}
+        {{ deal.contact ? `${deal.contact.first_name} ${deal.contact.last_name}` : (deal.contact_name || 'No Contact') }}
+      </div>
+
+      <div v-if="deal.client" class="text-caption text-medium-emphasis mb-2">
+        <SvgSprite name="custom-building" class="mr-1" style="width: 14px; height: 14px; vertical-align: middle;" />
+        {{ deal.client.name }}
+      </div>
+      <div v-else-if="deal.client_name" class="text-caption text-medium-emphasis mb-2">
+        <SvgSprite name="custom-building" class="mr-1" style="width: 14px; height: 14px; vertical-align: middle;" />
+        {{ deal.client_name }}
       </div>
 
       <div class="d-flex justify-space-between align-center mt-2">

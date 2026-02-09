@@ -14,14 +14,14 @@ class DealController extends Controller
     public function index()
     {
         return Inertia::render('CRM/Deals/Index', [
-            'deals' => Deal::with('stage')->latest()->get(),
+            'deals' => Deal::with(['stage', 'contact', 'client'])->latest()->get(),
         ]);
     }
 
     public function pipeline()
     {
         $stages = DealStage::orderBy('order_column')->get();
-        $deals = Deal::with('stage')->get();
+        $deals = Deal::with(['stage', 'contact', 'client'])->get();
 
         return Inertia::render('CRM/Deals/Pipeline', [
             'stages' => $stages,
@@ -33,6 +33,8 @@ class DealController extends Controller
     {
         return Inertia::render('CRM/Deals/Create', [
             'stages' => DealStage::orderBy('order_column')->get(),
+            'contacts' => \App\Models\Contact::orderBy('first_name')->get(['id', 'first_name', 'last_name']),
+            'clients' => \App\Models\Client::orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -40,17 +42,22 @@ class DealController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
             'value' => 'required|numeric',
             'deal_stage_id' => 'required|exists:deal_stages,id',
+            'contact_id' => 'nullable|exists:contacts,id',
+            'client_id' => 'nullable|exists:clients,id',
             'contact_name' => 'nullable|string',
             'client_name' => 'nullable|string',
             'expected_close_date' => 'nullable|date',
+            'probability' => 'nullable|integer|min:0|max:100',
         ]);
 
         $deal = Deal::create([
             ...$validated,
             'owner_id' => auth()->id(),
             'created_by' => auth()->id(),
+            'currency' => 'GHS',
         ]);
 
         return redirect()->route('crm.deals.pipeline')->with('success', 'Deal created successfully');
@@ -72,9 +79,10 @@ class DealController extends Controller
     public function show(Deal $deal)
     {
         return Inertia::render('CRM/Deals/Show', [
-            'deal' => $deal->load(['stage', 'activities' => function($query) {
-                $query->orderBy('activity_date', 'desc');
+            'deal' => $deal->load(['stage', 'contact', 'client', 'owner', 'activities' => function($query) {
+                $query->orderBy('activity_date', 'desc')->with('owner');
             }]),
+            'stages' => DealStage::orderBy('order_column')->get(),
         ]);
     }
 
@@ -83,6 +91,8 @@ class DealController extends Controller
         return Inertia::render('CRM/Deals/Edit', [
             'deal' => $deal,
             'stages' => DealStage::orderBy('order_column')->get(),
+            'contacts' => \App\Models\Contact::orderBy('first_name')->get(['id', 'first_name', 'last_name']),
+            'clients' => \App\Models\Client::orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -90,14 +100,18 @@ class DealController extends Controller
     {
         $validated = $request->validate([
             'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
             'value' => 'required|numeric|min:0',
             'currency' => 'required|string|size:3',
             'deal_stage_id' => 'required|exists:deal_stages,id',
+            'contact_id' => 'nullable|exists:contacts,id',
+            'client_id' => 'nullable|exists:clients,id',
             'probability' => 'required|integer|min:0|max:100',
             'contact_name' => 'nullable|string|max:255',
             'client_name' => 'nullable|string|max:255',
             'expected_close_date' => 'nullable|date',
             'status' => 'required|in:open,won,lost',
+            'lost_reason' => 'nullable|string',
         ]);
 
         $deal->update($validated);
