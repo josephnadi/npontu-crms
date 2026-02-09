@@ -2,7 +2,7 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import DashboardLayout from '@/layouts/dashboard/DashboardLayout.vue';
 import { ref, watch } from 'vue';
-import debounce from 'lodash/debounce';
+import { debounce } from 'lodash';
 
 const props = defineProps({
   clients: Object,

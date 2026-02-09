@@ -4,6 +4,7 @@ use App\Http\Controllers\CRM\DealController;
 use App\Http\Controllers\CRM\ActivityController;
 use App\Http\Controllers\CRM\DashboardController;
 use App\Http\Controllers\CRM\ClientController;
+use App\Http\Controllers\CRM\LeadController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -56,6 +57,10 @@ Route::middleware('auth')->group(function () {
 
         // Clients
         Route::resource('clients', ClientController::class)->names('crm.clients');
+
+        // Leads
+        Route::post('/leads/{lead}/convert', [LeadController::class, 'convert'])->name('crm.leads.convert');
+        Route::resource('leads', LeadController::class)->names('crm.leads');
     });
 });
 
