@@ -44,4 +44,7 @@ export default defineConfig({
             tsconfig: path.resolve(__dirname, 'tsconfig.json'),
         },
     },
+    build: {
+        outDir: 'dist',
+    },
 });
