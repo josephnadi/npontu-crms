@@ -49,7 +49,7 @@ const sidebarItem: menu[] = [
   },
   {
     title: 'Engagements',
-    icon: 'custom-star',
+    icon: 'custom-star-outline',
     to: '/crm/engagements'
   },
   {
@@ -64,7 +64,7 @@ const sidebarItem: menu[] = [
   },
   {
     title: 'Invoices',
-    icon: 'custom-bill',
+    icon: 'custom-invoice',
     to: '/crm/invoices'
   },
   {
