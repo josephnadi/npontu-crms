@@ -71,6 +71,10 @@ class ContactController extends Controller
     {
         $contact->load(['client', 'owner', 'deals', 'activities' => function($query) {
             $query->orderBy('activity_date', 'desc')->with('owner');
+        }, 'communications' => function($query) {
+            $query->orderBy('created_at', 'desc');
+        }, 'engagements' => function($query) {
+            $query->orderBy('engagement_date', 'desc')->with('user');
         }]);
         return Inertia::render('CRM/Contacts/Show', [
             'contact' => $contact,

@@ -1,11 +1,17 @@
 <?php
 
+use App\Http\Controllers\CRM\CommunicationController;
+use App\Http\Controllers\CRM\EngagementController;
 use App\Http\Controllers\CRM\DealController;
 use App\Http\Controllers\CRM\ActivityController;
 use App\Http\Controllers\CRM\DashboardController;
 use App\Http\Controllers\CRM\ClientController;
 use App\Http\Controllers\CRM\ContactController;
 use App\Http\Controllers\CRM\LeadController;
+use App\Http\Controllers\CRM\ProjectController;
+use App\Http\Controllers\CRM\TaskController;
+use App\Http\Controllers\CRM\InvoiceController;
+use App\Http\Controllers\CRM\MarketingAutomationController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SettingsController;
@@ -22,6 +28,8 @@ use Inertia\Inertia;
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login']);
+    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+    Route::post('/register', [AuthController::class, 'register']);
     Route::get('/login1', fn () => Inertia::render('Auth/Login1'));
     Route::get('/register1', fn () => Inertia::render('Auth/Register1'));
     Route::get('/forgot-pwd1', fn () => Inertia::render('Auth/ForgotPwd1'));
@@ -58,6 +66,9 @@ Route::middleware('auth')->group(function () {
 
         // Activities
         Route::get('/activities-calendar', [ActivityController::class, 'calendar'])->name('crm.activities.calendar');
+        Route::put('/activities/{activity}/complete', [ActivityController::class, 'complete'])->name('crm.activities.complete');
+        Route::post('/activities/bulk-update', [ActivityController::class, 'bulkUpdate'])->name('crm.activities.bulkUpdate');
+        Route::post('/activities/bulk-destroy', [ActivityController::class, 'bulkDestroy'])->name('crm.activities.bulkDestroy');
         Route::resource('activities', ActivityController::class)->names('crm.activities');
 
         // Clients
@@ -69,6 +80,24 @@ Route::middleware('auth')->group(function () {
         // Leads
         Route::post('/leads/{lead}/convert', [LeadController::class, 'convert'])->name('crm.leads.convert');
         Route::resource('leads', LeadController::class)->names('crm.leads');
+
+        // Projects
+        Route::resource('projects', ProjectController::class)->names('crm.projects');
+
+        // Tasks
+        Route::resource('tasks', TaskController::class)->names('crm.tasks');
+
+        // Invoices
+        Route::resource('invoices', InvoiceController::class)->names('crm.invoices');
+
+        // Marketing Automations
+        Route::resource('marketing-automations', MarketingAutomationController::class)->names('crm.marketing-automations');
+
+        // Communications (Unified Inbox)
+        Route::resource('communications', CommunicationController::class)->names('crm.communications');
+
+        // Engagements
+        Route::resource('engagements', EngagementController::class)->names('crm.engagements');
     });
 
         // Profile

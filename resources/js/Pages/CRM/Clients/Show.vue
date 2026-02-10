@@ -4,6 +4,8 @@ import DashboardLayout from '@/layouts/dashboard/DashboardLayout.vue';
 import { ref } from 'vue';
 import ActivityTimeline from '@/components/CRM/ActivityTimeline.vue';
 import ActivityForm from '@/components/CRM/ActivityForm.vue';
+import EngagementTimeline from '@/components/CRM/EngagementTimeline.vue';
+import EngagementForm from '@/components/CRM/EngagementForm.vue';
 
 const props = defineProps({
   client: Object,
@@ -11,6 +13,7 @@ const props = defineProps({
 
 const tab = ref('contacts');
 const showActivityModal = ref(false);
+const showEngagementModal = ref(false);
 </script>
 
 <template>
@@ -101,6 +104,7 @@ const showActivityModal = ref(false);
           <v-tab value="contacts">Contacts ({{ client.contacts?.length || 0 }})</v-tab>
           <v-tab value="deals">Deals ({{ client.deals?.length || 0 }})</v-tab>
           <v-tab value="activities">Activities</v-tab>
+          <v-tab value="engagements">Engagements</v-tab>
         </v-tabs>
         
         <v-window v-model="tab" class="mt-4">
@@ -233,6 +237,39 @@ const showActivityModal = ref(false);
               </v-card-text>
             </v-card>
           </v-window-item>
+
+          <v-window-item value="engagements">
+            <v-card elevation="0" border>
+              <v-card-item title="Engagement Timeline">
+                <template v-slot:append>
+                  <div class="d-flex gap-2">
+                    <v-btn
+                      color="warning"
+                      size="small"
+                      variant="flat"
+                      prepend-icon="mdi-star-plus-outline"
+                      @click="showEngagementModal = true"
+                    >
+                      Log Engagement
+                    </v-btn>
+                    <v-btn
+                      color="secondary"
+                      size="small"
+                      variant="text"
+                      prepend-icon="mdi-star-outline"
+                      @click="router.get(route('crm.engagements.index'))"
+                    >
+                      View All
+                    </v-btn>
+                  </div>
+                </template>
+              </v-card-item>
+              <v-divider></v-divider>
+              <v-card-text class="pa-4">
+                <EngagementTimeline :engagements="client.engagements" />
+              </v-card-text>
+            </v-card>
+          </v-window-item>
         </v-window>
       </v-col>
     </v-row>
@@ -249,6 +286,23 @@ const showActivityModal = ref(false);
             activityable-type="App\Models\Client" 
             :activityable-id="client.id"
             @success="showActivityModal = false"
+          />
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
+    <!-- Log Engagement Modal -->
+    <v-dialog v-model="showEngagementModal" max-width="700px">
+      <v-card>
+        <v-card-title class="pa-4 bg-warning text-white d-flex justify-space-between align-center">
+          <span>Log Engagement for {{ client.name }}</span>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="showEngagementModal = false"></v-btn>
+        </v-card-title>
+        <v-card-text class="pa-4 pt-6">
+          <EngagementForm 
+            engageable-type="App\Models\Client" 
+            :engageable-id="client.id"
+            @success="showEngagementModal = false"
           />
         </v-card-text>
       </v-card>

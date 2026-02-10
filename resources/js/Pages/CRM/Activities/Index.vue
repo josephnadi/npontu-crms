@@ -10,11 +10,13 @@ const props = defineProps({
     required: true
   },
   filters: Object,
+  stats: Object,
 });
 
 const search = ref(props.filters?.search || '');
 const typeFilter = ref(props.filters?.type || 'all');
 const statusFilter = ref(props.filters?.status || 'all');
+const selected = ref([]);
 
 const applyFilters = () => {
   router.get(route('crm.activities.index'), {
@@ -25,6 +27,31 @@ const applyFilters = () => {
     preserveState: true,
     replace: true
   });
+};
+
+const markCompleted = (activity) => {
+  router.put(route('crm.activities.complete', activity.id), {}, {
+    preserveScroll: true,
+    onSuccess: () => {
+      // Refresh stats if needed
+    }
+  });
+};
+
+const bulkAction = (action) => {
+  if (selected.value.length === 0) return;
+  
+  if (action === 'delete') {
+    if (confirm(`Are you sure you want to delete ${selected.value.length} activities?`)) {
+      router.post(route('crm.activities.bulkDestroy'), { ids: selected.value }, {
+        onSuccess: () => selected.value = []
+      });
+    }
+  } else {
+    router.post(route('crm.activities.bulkUpdate'), { ids: selected.value, status: action }, {
+      onSuccess: () => selected.value = []
+    });
+  }
 };
 
 const deleteActivity = (id) => {
@@ -95,6 +122,47 @@ const getEntityName = (activity) => {
         </div>
       </v-col>
 
+      <!-- Stats Cards -->
+      <v-col cols="12" md="4">
+        <v-card border elevation="0" class="bg-light-primary">
+          <v-card-text class="d-flex align-center">
+            <v-avatar color="primary" variant="tonal" class="mr-4">
+              <v-icon>mdi-clock-outline</v-icon>
+            </v-avatar>
+            <div>
+              <div class="text-subtitle-2 text-grey">Pending Activities</div>
+              <div class="text-h4 font-weight-bold">{{ stats.pending }}</div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="12" md="4">
+        <v-card border elevation="0" class="bg-light-error">
+          <v-card-text class="d-flex align-center">
+            <v-avatar color="error" variant="tonal" class="mr-4">
+              <v-icon>mdi-alert-circle-outline</v-icon>
+            </v-avatar>
+            <div>
+              <div class="text-subtitle-2 text-grey">Overdue</div>
+              <div class="text-h4 font-weight-bold">{{ stats.overdue }}</div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+      <v-col cols="12" md="4">
+        <v-card border elevation="0" class="bg-light-success">
+          <v-card-text class="d-flex align-center">
+            <v-avatar color="success" variant="tonal" class="mr-4">
+              <v-icon>mdi-check-circle-outline</v-icon>
+            </v-avatar>
+            <div>
+              <div class="text-subtitle-2 text-grey">Completed Today</div>
+              <div class="text-h4 font-weight-bold">{{ stats.completed_today }}</div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-col>
+
       <v-col cols="12">
         <v-card class="mb-4">
           <v-card-text>
@@ -110,7 +178,7 @@ const getEntityName = (activity) => {
                   @keyup.enter="applyFilters"
                 ></v-text-field>
               </v-col>
-              <v-col cols="12" md="3">
+              <v-col cols="12" md="2">
                 <v-select
                   v-model="typeFilter"
                   :items="['all', 'call', 'meeting', 'email', 'task', 'note']"
@@ -122,10 +190,10 @@ const getEntityName = (activity) => {
                   @update:modelValue="applyFilters"
                 ></v-select>
               </v-col>
-              <v-col cols="12" md="3">
+              <v-col cols="12" md="2">
                 <v-select
                   v-model="statusFilter"
-                  :items="['all', 'pending', 'completed', 'cancelled']"
+                  :items="['all', 'pending', 'completed', 'cancelled', 'overdue']"
                   label="Status"
                   hide-details
                   variant="outlined"
@@ -133,6 +201,12 @@ const getEntityName = (activity) => {
                   class="text-capitalize"
                   @update:modelValue="applyFilters"
                 ></v-select>
+              </v-col>
+              <v-col cols="12" md="4" class="d-flex justify-end gap-2">
+                <v-btn-group v-if="selected.length > 0">
+                  <v-btn color="success" variant="outlined" size="small" @click="bulkAction('completed')">Complete</v-btn>
+                  <v-btn color="error" variant="outlined" size="small" @click="bulkAction('delete')">Delete</v-btn>
+                </v-btn-group>
               </v-col>
             </v-row>
           </v-card-text>
@@ -142,6 +216,12 @@ const getEntityName = (activity) => {
           <v-table>
             <thead>
               <tr>
+                <th style="width: 40px">
+                  <v-checkbox-btn
+                    :model-value="selected.length === activities.data.length && activities.data.length > 0"
+                    @change="selected = $event ? activities.data.map(a => a.id) : []"
+                  ></v-checkbox-btn>
+                </th>
                 <th class="text-left">Type</th>
                 <th class="text-left">Subject</th>
                 <th class="text-left">Related To</th>
@@ -151,7 +231,10 @@ const getEntityName = (activity) => {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="activity in activities.data" :key="activity.id">
+              <tr v-for="activity in activities.data" :key="activity.id" :class="{ 'bg-grey-lighten-4': selected.includes(activity.id) }">
+                <td>
+                  <v-checkbox-btn v-model="selected" :value="activity.id"></v-checkbox-btn>
+                </td>
                 <td>
                   <div class="d-flex align-center">
                     <v-avatar :color="getColor(activity.type)" size="32" class="mr-3">
@@ -167,14 +250,21 @@ const getEntityName = (activity) => {
                   </div>
                 </td>
                 <td>
-                  <div class="text-caption text-grey mb-1">
-                    {{ activity.activityable_type.split('\\').pop() }}
+                  <div v-if="activity.activityable">
+                    <div class="text-caption text-grey mb-1">
+                      {{ activity.activityable_type.split('\\').pop() }}
+                    </div>
+                    <Link :href="getEntityLink(activity)" class="text-primary text-decoration-none font-weight-medium">
+                      {{ getEntityName(activity) }}
+                    </Link>
                   </div>
-                  <Link :href="getEntityLink(activity)" class="text-primary text-decoration-none font-weight-medium">
-                    {{ getEntityName(activity) }}
-                  </Link>
+                  <span v-else class="text-caption text-grey">Unlinked</span>
                 </td>
-                <td>{{ formatDate(activity.activity_date) }}</td>
+                <td>
+                  <div :class="{ 'text-error font-weight-bold': activity.status === 'pending' && new Date(activity.due_date || activity.activity_date) < new Date() }">
+                    {{ formatDate(activity.activity_date) }}
+                  </div>
+                </td>
                 <td>
                   <v-chip
                     :color="activity.status === 'completed' ? 'success' : (activity.status === 'pending' ? 'warning' : 'error')"
@@ -196,7 +286,7 @@ const getEntityName = (activity) => {
                       </v-list-item>
                       <v-list-item 
                         v-if="activity.status === 'pending'"
-                        @click="router.put(route('crm.activities.update', activity.id), { ...activity, status: 'completed' })" 
+                        @click="markCompleted(activity)" 
                         prepend-icon="mdi-check"
                         color="success"
                       >
@@ -211,7 +301,7 @@ const getEntityName = (activity) => {
                 </td>
               </tr>
               <tr v-if="activities.data.length === 0">
-                <td colspan="6" class="text-center py-8 text-grey">
+                <td colspan="7" class="text-center py-8 text-grey">
                   No activities found matching your criteria.
                 </td>
               </tr>

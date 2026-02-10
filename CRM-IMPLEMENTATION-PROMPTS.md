@@ -800,9 +800,100 @@ Ensure polymorphic relationships work correctly!
 
 ---
 
-## PHASE 6: Dashboard & Reports (3-4 Days)
+## PHASE 6: Engagement (2-3 Days)
 
-### ✅ Prompt 6.1: Create CRM Dashboard Controller
+### ✅ Prompt 6.1: Create Engagements Migration
+**📎 Files to Tag:** @database/migrations/ @CRM-MODULE-ROADMAP.md
+
+```
+Create migration for engagements table with:
+- type (string: email_opened, link_clicked, meeting_attended, webinar, form_submitted, content_viewed, other)
+- subject (string, nullable), description (text, nullable)
+- engagement_date (timestamp, required)
+- score (integer 0-100, nullable)
+- Polymorphic: engagementable_type, engagementable_id (Contact, Lead, Deal, Client)
+- metadata (JSON, nullable), tags (JSON, nullable)
+- owner_id, created_by (foreignId to users)
+- timestamps, soft deletes
+- Indexes on type, engagement_date, polymorphic, owner_id, deleted_at
+
+Use $table->json() for JSON columns. See roadmap engagements table spec.
+```
+
+### ✅ Prompt 6.2: Create Engagement Model and Resources
+**📎 Files to Tag:** @app/Models/Activity.php @CRM-MODULE-ROADMAP.md
+
+```
+Create:
+1. Engagement model (app/Models/Engagement.php) with:
+   - morphTo(engagementable) for Contact, Lead, Deal, Client
+   - belongsTo(User as owner)
+   - Fillable, casts for metadata/tags (array), SoftDeletes
+   - Scopes: byType(), dateRange()
+2. EngagementResource (app/Http/Resources/CRM/EngagementResource.php)
+3. StoreEngagementRequest, UpdateEngagementRequest (validation: type in allowed list, engagement_date required, score 0-100 nullable)
+4. Add engagements() morphMany to Contact, Lead, Deal, Client models
+```
+
+### ✅ Prompt 6.3: Create Engagement Controller and Routes
+**📎 Files to Tag:** @app/Http/Controllers/CRM/ActivityController.php @routes/crm.php
+
+```
+Create app/Http/Controllers/CRM/EngagementController.php with:
+- index() - List engagements with filters (type, date_from, date_to, engagementable_type/id), pagination, eager load engagementable and owner
+- create() - Show form (pass entity types for "related to" selector)
+- store() - Validate, set engagementable from request, created_by
+- show() - Engagement detail with engagementable
+- edit(), update(), destroy()
+
+Add to routes/crm.php: Route::resource('engagement', EngagementController::class)->names('crm.engagement');
+Add sidebar item: Engagement → /crm/engagement (e.g. icon: custom-chart-line).
+```
+
+### ✅ Prompt 6.4: Create Engagement Index and Create Pages
+**📎 Files to Tag:** @resources/js/Pages/CRM/Activities/Index.vue @resources/js/layouts/dashboard/DashboardLayout.vue
+
+```
+Create:
+1. resources/js/Pages/CRM/Engagement/Index.vue
+   - DashboardLayout, page header "Engagement", "Log engagement" button
+   - Filters: type (dropdown), date range (from/to), related to (type + optional id)
+   - v-table: Type (badge), Subject, Related to (link to entity), Date, Score, Owner, Actions
+   - Pagination, View/Edit/Delete actions
+2. resources/js/Pages/CRM/Engagement/Create.vue
+   - Form: type (select), subject, description, engagement_date (required), score (0-100 slider/input), "Related to" (entity type + entity selector)
+   - Use Vuetify form components and Inertia useForm
+```
+
+### ✅ Prompt 6.5: Create EngagementTimeline Component
+**📎 Files to Tag:** @resources/js/Components/CRM/ActivityTimeline.vue
+
+```
+Create resources/js/Components/CRM/EngagementTimeline.vue:
+- Props: engagements (array), relatedTo (object with type and id)
+- Display engagements in chronological order (most recent first)
+- Each item: icon by type (email, link, meeting, webinar, etc.), type badge, subject, date, optional score
+- "Log engagement" button that links to create page with relatedTo pre-filled (e.g. /crm/engagement/create?contact_id=123)
+- Empty state when no engagements
+- Use Vuetify list/card styling consistent with ActivityTimeline
+```
+
+### ✅ Prompt 6.6: Integrate Engagement on Entity Show Pages
+**📎 Files to Tag:** @resources/js/Pages/CRM/Contacts/Show.vue @resources/js/Pages/CRM/Leads/Show.vue @app/Http/Controllers/CRM/ContactController.php
+
+```
+1. Update Contact, Client, Lead, Deal controllers: in show(), eager load engagements (e.g. engagements()->latest()->take(20))
+2. Include engagements in the resource or props passed to Show pages
+3. On each Show page (Contacts, Clients, Leads, Deals), add an "Engagement" card section with EngagementTimeline component, passing engagements and relatedTo (e.g. { type: 'Contact', id: contact.id })
+
+Ensure "Log engagement" link pre-fills the related entity on the Create page.
+```
+
+---
+
+## PHASE 7: Dashboard & Reports (3-4 Days)
+
+### ✅ Prompt 7.1: Create CRM Dashboard Controller
 ```
 Create app/Http/Controllers/CRM/DashboardController.php with index() method that returns:
 - Metrics:
@@ -822,7 +913,7 @@ Create app/Http/Controllers/CRM/DashboardController.php with index() method that
 Optimize queries with proper aggregations and caching where appropriate.
 ```
 
-### ✅ Prompt 6.2: Create Metric Card Component
+### ✅ Prompt 7.2: Create Metric Card Component
 ```
 Create resources/js/Components/CRM/MetricCard.vue:
 - Props: title, value, change (percentage), icon, variant (color)
@@ -835,7 +926,7 @@ Create resources/js/Components/CRM/MetricCard.vue:
 Reusable for all dashboard metrics.
 ```
 
-### ✅ Prompt 6.3: Create Dashboard Charts Components
+### ✅ Prompt 7.3: Create Dashboard Charts Components
 ```
 Create chart components using ApexCharts:
 
@@ -861,7 +952,7 @@ All charts should:
 - Match the dashboard aesthetic
 ```
 
-### ✅ Prompt 6.4: Create CRM Dashboard Page ⭐
+### ✅ Prompt 7.4: Create CRM Dashboard Page ⭐
 ```
 Create resources/js/Pages/CRM/Dashboard/Index.vue:
 - Use DashboardLayout
@@ -876,7 +967,7 @@ Create resources/js/Pages/CRM/Dashboard/Index.vue:
 Make it visually appealing and informative at a glance!
 ```
 
-### ✅ Prompt 6.5: Create Top Performers Component
+### ✅ Prompt 7.5: Create Top Performers Component
 ```
 Create resources/js/Components/CRM/TopPerformersCard.vue:
 - Props: performers (array of users with metrics)
@@ -889,7 +980,7 @@ Create resources/js/Components/CRM/TopPerformersCard.vue:
 Motivational leaderboard style!
 ```
 
-### ✅ Prompt 6.6: Create Recent Activities Feed Component
+### ✅ Prompt 7.6: Create Recent Activities Feed Component
 ```
 Create resources/js/Components/CRM/RecentActivitiesCard.vue:
 - Props: activities (array)
@@ -902,7 +993,7 @@ Create resources/js/Components/CRM/RecentActivitiesCard.vue:
 Similar to ActivityTimeline but more compact for dashboard.
 ```
 
-### ✅ Prompt 6.7: Add Dashboard Link to Navigation
+### ✅ Prompt 7.7: Add Dashboard Link to Navigation
 ```
 Update routes/crm.php to ensure dashboard route is first:
 - Route::get('/dashboard', [DashboardController::class, 'index'])->name('crm.dashboard');
@@ -912,7 +1003,7 @@ Update sidebar so "CRM Dashboard" link goes to /crm/dashboard
 Test that dashboard loads with all metrics and charts.
 ```
 
-### ✅ Prompt 6.8: Create Reports Pages (Optional Enhancement)
+### ✅ Prompt 7.8: Create Reports Pages (Optional Enhancement)
 ```
 Create additional report pages:
 
@@ -934,7 +1025,7 @@ Create additional report pages:
 These are advanced features - implement if time permits.
 ```
 
-### ✅ Prompt 6.9: Add Date Range Filter to Dashboard
+### ✅ Prompt 7.9: Add Date Range Filter to Dashboard
 ```
 Add a date range filter to the CRM dashboard:
 - Dropdown with options: Today, This Week, This Month, Last Month, This Quarter, Custom Range
@@ -945,7 +1036,7 @@ Add a date range filter to the CRM dashboard:
 Allows users to analyze different time periods.
 ```
 
-### ✅ Prompt 6.10: Test Dashboard
+### ✅ Prompt 7.10: Test Dashboard
 ```
 Test the complete dashboard:
 1. Verify all metrics display correctly
@@ -962,9 +1053,9 @@ Ensure dashboard provides valuable insights at a glance!
 
 ---
 
-## PHASE 7: Polish & Enhancement (3-4 Days)
+## PHASE 8: Polish & Enhancement (3-4 Days)
 
-### ✅ Prompt 7.1: Add Search Functionality
+### ✅ Prompt 8.1: Add Search Functionality
 ```
 Implement global CRM search:
 1. Add search input in header (DashboardLayout or separate CRM header)
@@ -979,7 +1070,7 @@ Implement global CRM search:
 Use Vuetify for search results layout.
 ```
 
-### ✅ Prompt 7.2: Add Advanced Filters
+### ✅ Prompt 8.2: Add Advanced Filters
 ```
 Create a reusable filter component:
 - resources/js/Components/CRM/AdvancedFilters.vue
@@ -992,7 +1083,7 @@ Create a reusable filter component:
 Apply to all list pages (contacts, clients, leads, deals, activities).
 ```
 
-### ✅ Prompt 7.3: Add Export Functionality
+### ✅ Prompt 8.3: Add Export Functionality
 ```
 Implement CSV export for all list views:
 1. Add export button to each index page
@@ -1006,7 +1097,7 @@ Implement CSV export for all list views:
 Users need to export data for external use!
 ```
 
-### ✅ Prompt 7.4: Add Bulk Actions
+### ✅ Prompt 8.4: Add Bulk Actions
 ```
 Implement bulk operations on list pages:
 - Checkboxes on each table row
@@ -1019,7 +1110,7 @@ Implement bulk operations on list pages:
 Apply to contacts, clients, leads, deals lists.
 ```
 
-### ✅ Prompt 7.5: Setup Notifications System
+### ✅ Prompt 8.5: Setup Notifications System
 ```
 Create Laravel notifications for key events:
 1. New lead assigned to user
@@ -1037,7 +1128,7 @@ Create notification templates:
 Send via mail and database channels. Show in header notification dropdown.
 ```
 
-### ✅ Prompt 7.6: Create Email Templates
+### ✅ Prompt 8.6: Create Email Templates
 ```
 Create Blade email templates for notifications:
 - resources/views/emails/crm/lead-assigned.blade.php
@@ -1053,7 +1144,7 @@ Use professional, branded design. Include:
 Test sending emails from local environment.
 ```
 
-### ✅ Prompt 7.7: Add User Assignment Features
+### ✅ Prompt 8.7: Add User Assignment Features
 ```
 Enhance ownership and assignment:
 1. Create "Assign to" dropdown on all entities
@@ -1066,7 +1157,7 @@ Enhance ownership and assignment:
 Important for team collaboration!
 ```
 
-### ✅ Prompt 7.8: Add Tags Management
+### ✅ Prompt 8.8: Add Tags Management
 ```
 Create comprehensive tagging system:
 1. Create app/Http/Controllers/CRM/TagController.php
@@ -1082,7 +1173,7 @@ Create comprehensive tagging system:
 Tags are crucial for organization!
 ```
 
-### ✅ Prompt 7.9: Implement Permissions & Authorization
+### ✅ Prompt 8.9: Implement Permissions & Authorization
 ```
 Create authorization policies:
 1. app/Policies/CRM/ContactPolicy.php
@@ -1101,7 +1192,7 @@ Register policies in AppServiceProvider.
 Apply authorization checks in controllers and blade/vue templates.
 ```
 
-### ✅ Prompt 7.10: Add Custom Fields Support
+### ✅ Prompt 8.10: Add Custom Fields Support
 ```
 Implement custom fields feature:
 1. Create custom_fields JSONB column in all entity tables (already exists)
@@ -1116,7 +1207,7 @@ Implement custom fields feature:
 This adds flexibility to the CRM!
 ```
 
-### ✅ Prompt 7.11: Create Onboarding Tour
+### ✅ Prompt 8.11: Create Onboarding Tour
 ```
 Add guided tour for new users:
 1. Install intro.js or driver.js
@@ -1133,7 +1224,7 @@ Add guided tour for new users:
 Improves user adoption!
 ```
 
-### ✅ Prompt 7.12: Performance Optimization
+### ✅ Prompt 8.12: Performance Optimization
 ```
 Optimize CRM module for performance:
 1. Add database indexes (verify all foreign keys have indexes)
@@ -1148,7 +1239,7 @@ Optimize CRM module for performance:
 Run performance tests and optimize bottlenecks.
 ```
 
-### ✅ Prompt 7.13: Error Handling & Validation
+### ✅ Prompt 8.13: Error Handling & Validation
 ```
 Improve error handling:
 1. Add try-catch blocks in controllers for database operations
@@ -1162,7 +1253,7 @@ Improve error handling:
 Better UX when things go wrong!
 ```
 
-### ✅ Prompt 7.14: Create User Guide Documentation
+### ✅ Prompt 8.14: Create User Guide Documentation
 ```
 Create user documentation:
 1. Create resources/views/crm-help.blade.php or markdown file
@@ -1179,7 +1270,7 @@ Create user documentation:
 Users need guidance!
 ```
 
-### ✅ Prompt 7.15: Final Testing & Bug Fixes
+### ✅ Prompt 8.15: Final Testing & Bug Fixes
 ```
 Comprehensive testing checklist:
 1. Test all CRUD operations for each entity
@@ -1202,9 +1293,9 @@ Fix all bugs found. Get QA approval before production!
 
 ---
 
-## PHASE 8: Production Deployment (Bonus)
+## PHASE 9: Production Deployment (Bonus)
 
-### ✅ Prompt 8.1: Prepare for Production
+### ✅ Prompt 9.1: Prepare for Production
 ```
 Production deployment checklist:
 1. Review all .env variables
@@ -1221,7 +1312,7 @@ Production deployment checklist:
 Run: php artisan config:cache, route:cache, view:cache
 ```
 
-### ✅ Prompt 8.2: Database Migration Strategy
+### ✅ Prompt 9.2: Database Migration Strategy
 ```
 Plan production database migration:
 1. Backup existing production database
@@ -1234,7 +1325,7 @@ Plan production database migration:
 Create migration rollback scripts if needed.
 ```
 
-### ✅ Prompt 8.3: Setup Monitoring
+### ✅ Prompt 9.3: Setup Monitoring
 ```
 Implement production monitoring:
 1. Setup Laravel Telescope in production (with authentication)
@@ -1249,7 +1340,7 @@ Implement production monitoring:
 Be proactive about issues!
 ```
 
-### ✅ Prompt 8.4: User Training
+### ✅ Prompt 9.4: User Training
 ```
 Prepare for user rollout:
 1. Schedule training sessions for end users
@@ -1263,7 +1354,7 @@ Prepare for user rollout:
 User adoption is key to success!
 ```
 
-### ✅ Prompt 8.5: Post-Launch Support Plan
+### ✅ Prompt 9.5: Post-Launch Support Plan
 ```
 Setup post-launch support:
 1. Monitor application closely for first week
@@ -1290,11 +1381,12 @@ Track your progress by checking off completed prompts:
 **Phase 3 - Leads:** [ ] 0/8 prompts completed  
 **Phase 4 - Deals:** [ ] 0/11 prompts completed  
 **Phase 5 - Activities:** [ ] 0/10 prompts completed  
-**Phase 6 - Dashboard:** [ ] 0/10 prompts completed  
-**Phase 7 - Polish:** [ ] 0/15 prompts completed  
-**Phase 8 - Deployment:** [ ] 0/5 prompts completed
+**Phase 6 - Engagement:** [ ] 0/6 prompts completed  
+**Phase 7 - Dashboard:** [ ] 0/10 prompts completed  
+**Phase 8 - Polish:** [ ] 0/15 prompts completed  
+**Phase 9 - Deployment:** [ ] 0/5 prompts completed
 
-**Total Progress:** [ ] 0/81 prompts completed
+**Total Progress:** [ ] 0/87 prompts completed
 
 ---
 

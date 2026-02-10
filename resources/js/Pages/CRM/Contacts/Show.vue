@@ -4,6 +4,10 @@ import DashboardLayout from '@/layouts/dashboard/DashboardLayout.vue';
 import { ref } from 'vue';
 import ActivityTimeline from '@/components/CRM/ActivityTimeline.vue';
 import ActivityForm from '@/components/CRM/ActivityForm.vue';
+import CommunicationTimeline from '@/components/CRM/CommunicationTimeline.vue';
+import CommunicationForm from '@/components/CRM/CommunicationForm.vue';
+import EngagementTimeline from '@/components/CRM/EngagementTimeline.vue';
+import EngagementForm from '@/components/CRM/EngagementForm.vue';
 
 const props = defineProps({
   contact: Object,
@@ -11,6 +15,8 @@ const props = defineProps({
 
 const tab = ref('activities');
 const showActivityModal = ref(false);
+const showInteractionModal = ref(false);
+const showEngagementModal = ref(false);
 </script>
 
 <template>
@@ -113,6 +119,8 @@ const showActivityModal = ref(false);
       <v-col cols="12" md="8">
         <v-tabs v-model="tab" color="primary">
           <v-tab value="activities">Activities</v-tab>
+          <v-tab value="interactions">Interactions</v-tab>
+          <v-tab value="engagements">Engagements</v-tab>
           <v-tab value="deals">Deals ({{ contact.deals?.length || 0 }})</v-tab>
         </v-tabs>
         
@@ -135,6 +143,61 @@ const showActivityModal = ref(false);
               <v-divider></v-divider>
               <v-card-text class="pa-4">
                 <ActivityTimeline :activities="contact.activities" />
+              </v-card-text>
+            </v-card>
+          </v-window-item>
+
+          <v-window-item value="interactions">
+            <v-card elevation="0" border>
+              <v-card-item title="Omnichannel Interactions">
+                <template v-slot:append>
+                  <v-btn
+                    color="secondary"
+                    size="small"
+                    variant="flat"
+                    prepend-icon="mdi-message-plus-outline"
+                    @click="showInteractionModal = true"
+                  >
+                    Log Interaction
+                  </v-btn>
+                </template>
+              </v-card-item>
+              <v-divider></v-divider>
+              <v-card-text class="pa-4">
+                <CommunicationTimeline :communications="contact.communications" />
+              </v-card-text>
+            </v-card>
+          </v-window-item>
+
+          <v-window-item value="engagements">
+            <v-card elevation="0" border>
+              <v-card-item title="Engagement Timeline">
+                <template v-slot:append>
+                  <div class="d-flex gap-2">
+                    <v-btn
+                      color="warning"
+                      size="small"
+                      variant="flat"
+                      prepend-icon="mdi-star-plus-outline"
+                      @click="showEngagementModal = true"
+                    >
+                      Log Engagement
+                    </v-btn>
+                    <v-btn
+                      color="secondary"
+                      size="small"
+                      variant="text"
+                      prepend-icon="mdi-star-outline"
+                      @click="router.get(route('crm.engagements.index'))"
+                    >
+                      View All
+                    </v-btn>
+                  </div>
+                </template>
+              </v-card-item>
+              <v-divider></v-divider>
+              <v-card-text class="pa-4">
+                <EngagementTimeline :engagements="contact.engagements" />
               </v-card-text>
             </v-card>
           </v-window-item>
@@ -188,6 +251,24 @@ const showActivityModal = ref(false);
       </v-col>
     </v-row>
 
+    <!-- Log Interaction Modal -->
+    <v-dialog v-model="showInteractionModal" max-width="700px">
+      <v-card>
+        <v-card-title class="pa-4 bg-secondary text-white d-flex justify-space-between align-center">
+          <span>Log Omnichannel Interaction</span>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="showInteractionModal = false"></v-btn>
+        </v-card-title>
+        <v-card-text class="pa-4 pt-6">
+          <CommunicationForm 
+            communicable-type="App\Models\Contact" 
+            :communicable-id="contact.id"
+            :default-to="contact.email"
+            @success="showInteractionModal = false"
+          />
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
     <!-- Log Activity Modal -->
     <v-dialog v-model="showActivityModal" max-width="600px">
       <v-card>
@@ -200,6 +281,23 @@ const showActivityModal = ref(false);
             activityable-type="App\Models\Contact" 
             :activityable-id="contact.id"
             @success="showActivityModal = false"
+          />
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
+    <!-- Log Engagement Modal -->
+    <v-dialog v-model="showEngagementModal" max-width="700px">
+      <v-card>
+        <v-card-title class="pa-4 bg-warning text-white d-flex justify-space-between align-center">
+          <span>Log Engagement for {{ contact.first_name }}</span>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="showEngagementModal = false"></v-btn>
+        </v-card-title>
+        <v-card-text class="pa-4 pt-6">
+          <EngagementForm 
+            engageable-type="App\Models\Contact" 
+            :engageable-id="contact.id"
+            @success="showEngagementModal = false"
           />
         </v-card-text>
       </v-card>

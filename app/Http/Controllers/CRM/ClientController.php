@@ -60,10 +60,12 @@ class ClientController extends Controller
     {
         $client->load(['contacts', 'owner', 'deals.stage', 'activities' => function($query) {
             $query->orderBy('activity_date', 'desc')->with('owner');
+        }, 'engagements' => function($query) {
+            $query->orderBy('engagement_date', 'desc')->with('user');
         }]);
         
         return Inertia::render('CRM/Clients/Show', [
-            'client' => $client
+            'client' => $client,
         ]);
     }
 

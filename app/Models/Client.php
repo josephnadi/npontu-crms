@@ -39,6 +39,11 @@ class Client extends Model
         return $this->morphMany(Activity::class, 'activityable');
     }
 
+    public function engagements()
+    {
+        return $this->morphMany(Engagement::class, 'engageable');
+    }
+
     public function deals()
     {
         return $this->hasMany(Deal::class);

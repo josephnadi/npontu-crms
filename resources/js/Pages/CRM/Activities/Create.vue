@@ -20,7 +20,13 @@ const props = defineProps({
   clients: {
     type: Array,
     default: () => []
-  }
+  },
+  projects: {
+    type: Array,
+    default: () => []
+  },
+  initial_activityable_type: String,
+  initial_activityable_id: [String, Number],
 });
 
 const form = useForm({
@@ -30,8 +36,9 @@ const form = useForm({
   activity_date: new Date().toISOString().slice(0, 16),
   due_date: '',
   status: 'pending',
-  activityable_type: 'App\\Models\\Deal',
-  activityable_id: null,
+  activityable_type: props.initial_activityable_type ? (props.initial_activityable_type.includes('\\') ? props.initial_activityable_type : `App\\Models\\${props.initial_activityable_type}`) : 'App\\Models\\Deal',
+  activityable_id: props.initial_activityable_id ? parseInt(props.initial_activityable_id) : null,
+  duration_minutes: null,
 });
 
 const entityTypes = [
@@ -39,6 +46,7 @@ const entityTypes = [
   { title: 'Lead', value: 'App\\Models\\Lead' },
   { title: 'Contact', value: 'App\\Models\\Contact' },
   { title: 'Client', value: 'App\\Models\\Client' },
+  { title: 'Project', value: 'App\\Models\\Project' },
 ];
 
 const activityTypes = [
@@ -59,6 +67,8 @@ const availableEntities = computed(() => {
       return props.contacts.map(c => ({ title: `${c.first_name} ${c.last_name}`, value: c.id }));
     case 'App\\Models\\Client':
       return props.clients.map(c => ({ title: c.name, value: c.id }));
+    case 'App\\Models\\Project':
+      return props.projects.map(p => ({ title: p.name, value: p.id }));
     default:
       return [];
   }
@@ -161,6 +171,17 @@ const submit = () => {
                   variant="outlined"
                   prepend-inner-icon="mdi-note-text-outline"
                 ></v-textarea>
+              </v-col>
+
+              <v-col cols="12" md="6">
+                <v-text-field
+                  label="Duration (minutes)"
+                  type="number"
+                  v-model="form.duration_minutes"
+                  :error-messages="form.errors.duration_minutes"
+                  variant="outlined"
+                  prepend-inner-icon="mdi-timer-outline"
+                ></v-text-field>
               </v-col>
 
               <v-col cols="12" md="6">

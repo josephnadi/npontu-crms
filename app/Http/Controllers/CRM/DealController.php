@@ -143,6 +143,8 @@ class DealController extends Controller
         return Inertia::render('CRM/Deals/Show', [
             'deal' => $deal->load(['stage', 'contact', 'client', 'owner', 'activities' => function($query) {
                 $query->orderBy('activity_date', 'desc')->with('owner');
+            }, 'engagements' => function($query) {
+                $query->orderBy('engagement_date', 'desc')->with('user');
             }]),
             'stages' => DealStage::orderBy('order_column')->get(),
         ]);

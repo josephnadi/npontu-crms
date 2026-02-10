@@ -95,7 +95,6 @@ my-project/
 │   │   │       ├── LeadController.php
 │   │   │       ├── DealController.php
 │   │   │       ├── ActivityController.php
-│   │   │       └── DashboardController.php
 │   │   ├── Requests/CRM/
 │   │   │   ├── StoreContactRequest.php
 │   │   │   ├── UpdateContactRequest.php
@@ -143,8 +142,6 @@ my-project/
 │       │           └── sidebarItem.ts    ← Add CRM menu here
 │       ├── Pages/
 │       │   └── CRM/
-│       │       ├── Dashboard/
-│       │       │   └── Index.vue              # CRM main dashboard
 │       │       ├── Contacts/
 │       │       │   ├── Index.vue              # Contact list
 │       │       │   ├── Create.vue             # Add contact
@@ -166,10 +163,14 @@ my-project/
 │       │       │   ├── Create.vue
 │       │       │   ├── Edit.vue
 │       │       │   └── Show.vue
-│       │       └── Activities/
+│       │       ├── Activities/
+│       │       │   ├── Index.vue
+│       │       │   ├── Calendar.vue
+│       │       │   └── Create.vue
+│       │       └── Engagement/
 │       │           ├── Index.vue
-│       │           ├── Calendar.vue
-│       │           └── Create.vue
+│       │           ├── Create.vue
+│       │           └── Show.vue
 │       │
 │       └── components/
 │           └── CRM/
@@ -182,6 +183,7 @@ my-project/
 │               ├── DealPipeline.vue           # ⭐ Drag & drop
 │               ├── ActivityTimeline.vue       # ⭐ Activity feed
 │               ├── ActivityForm.vue
+│               ├── EngagementTimeline.vue     # Engagement events on entity pages
 │               ├── MetricCard.vue
 │               ├── StageSelector.vue
 │               ├── StatusBadge.vue
@@ -374,7 +376,41 @@ Click "Convert" → Lead marked as "Converted"
 
 ---
 
-### 6. CRM Dashboard & Reports 📊
+### 6. Engagement Management 📈
+**Purpose:** Track engagement touchpoints and events (email opens, link clicks, meetings attended, webinars, etc.) to measure how contacts/leads interact with your business.
+
+**Features:**
+- ✅ Engagement types (configurable):
+  - **Email opened** - Email engagement
+  - **Link clicked** - Click tracking
+  - **Meeting attended** - Event attendance
+  - **Webinar** - Webinar registration/attendance
+  - **Form submitted** - Form or survey
+  - **Content viewed** - Page/content view
+  - **Other** - Custom engagement
+- ✅ Link to Contact, Lead, Deal, or Client (polymorphic)
+- ✅ Engagement date and optional score (0–100)
+- ✅ Subject/description and optional metadata (JSON)
+- ✅ List and filter by type, entity, date range
+- ✅ Engagement timeline on Contact/Lead/Deal/Client detail pages
+- ✅ Optional engagement score rollup per contact/lead
+
+**UI Components:**
+- Engagement list (table with type, subject, related entity, date, score)
+- Engagement form (log new engagement)
+- Engagement timeline snippet on entity Show pages
+- Filters: type, date range, related entity
+
+**Engagement Flow:**
+```
+Contact/Lead/Deal/Client → "Log engagement" → Select type, subject, date, score
+  ↓
+Saved and shown in Engagement list + on entity’s timeline
+```
+
+---
+
+### 7. CRM Dashboard & Reports 📊
 **Purpose:** Overview of CRM metrics and performance
 
 **Features:**
@@ -438,6 +474,7 @@ contacts → clients
 deals → deal_stages
   ↓
 activities (polymorphic)
+engagements (polymorphic)
 
 leads → lead_sources
   ↓ (convert)
@@ -708,7 +745,39 @@ CREATE INDEX idx_activities_due_date ON activities(due_date);
 CREATE INDEX idx_activities_deleted_at ON activities(deleted_at);
 ```
 
-#### 8. **tags** (Optional - for better tag management)
+#### 8. **engagements** (Polymorphic - engagement events per entity)
+```sql
+CREATE TABLE engagements (
+    id BIGSERIAL PRIMARY KEY,
+    type VARCHAR(50) NOT NULL, -- email_opened, link_clicked, meeting_attended, webinar, form_submitted, content_viewed, other
+    subject VARCHAR(255),
+    description TEXT,
+    engagement_date TIMESTAMP NOT NULL,
+    score INTEGER CHECK (score >= 0 AND score <= 100), -- optional 0-100
+    
+    -- Polymorphic (Contact, Lead, Deal, or Client)
+    engagementable_type VARCHAR(100),
+    engagementable_id BIGINT,
+    
+    metadata JSONB, -- optional extra data
+    tags JSONB,
+    
+    owner_id BIGINT REFERENCES users(id),
+    created_by BIGINT REFERENCES users(id),
+    
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP NULL
+);
+
+CREATE INDEX idx_engagements_type ON engagements(type);
+CREATE INDEX idx_engagements_engagement_date ON engagements(engagement_date);
+CREATE INDEX idx_engagements_polymorphic ON engagements(engagementable_type, engagementable_id);
+CREATE INDEX idx_engagements_owner_id ON engagements(owner_id);
+CREATE INDEX idx_engagements_deleted_at ON engagements(deleted_at);
+```
+
+#### 9. **tags** (Optional - for better tag management)
 ```sql
 CREATE TABLE tags (
     id BIGSERIAL PRIMARY KEY,
@@ -745,11 +814,11 @@ CREATE INDEX idx_taggables_polymorphic ON taggables(taggable_type, taggable_id);
                           │   deals    │
                           └──────┬─────┘
                                 │
-         ┌──────────────────────┼──────────────────────┐
-         │                      │                      │
-    ┌────▼────┐           ┌────▼────┐           ┌────▼────┐
-    │  leads  │           │activities│          │deal_stages│
-    └─────────┘           └──────────┘          └──────────┘
+         ┌──────────────────────┼──────────────────────┬──────────────────────┐
+         │                      │                      │                      │
+    ┌────▼────┐           ┌────▼────┐           ┌────▼────┐           ┌────▼────┐
+    │  leads  │           │activities│           │engagements│          │deal_stages│
+    └─────────┘           └──────────┘           └──────────┘          └──────────┘
          │
     ┌────▼────────┐
     │lead_sources │
@@ -769,9 +838,10 @@ CREATE INDEX idx_taggables_polymorphic ON taggables(taggable_type, taggable_id);
 | **Phase 3** | Lead Management | 3-4 days | P0 |
 | **Phase 4** | Deal & Pipeline | 4-5 days | P0 |
 | **Phase 5** | Activities | 3-4 days | P1 |
-| **Phase 6** | Dashboard & Reports | 3-4 days | P0 |
-| **Phase 7** | Polish & Testing | 3-4 days | P1 |
-| **Total** | | **23-30 days** | **4-6 weeks** |
+| **Phase 6** | Engagement | 2-3 days | P1 |
+| **Phase 7** | Dashboard & Reports | 3-4 days | P0 |
+| **Phase 8** | Polish & Testing | 3-4 days | P1 |
+| **Total** | | **25-33 days** | **5-7 weeks** |
 
 ---
 
@@ -828,7 +898,7 @@ mkdir -p app/Policies/CRM
 mkdir -p database/seeders/CRM
 
 # Frontend directories
-mkdir -p resources/js/Pages/CRM/{Dashboard,Contacts,Clients,Leads,Deals,Activities}
+mkdir -p resources/js/Pages/CRM/{Dashboard,Contacts,Clients,Leads,Deals,Activities,Engagement}
 mkdir -p resources/js/Components/CRM
 ```
 
@@ -857,6 +927,7 @@ use App\Http\Controllers\CRM\ClientController;
 use App\Http\Controllers\CRM\LeadController;
 use App\Http\Controllers\CRM\DealController;
 use App\Http\Controllers\CRM\ActivityController;
+use App\Http\Controllers\CRM\EngagementController;
 use App\Http\Controllers\CRM\DashboardController;
 use Illuminate\Support\Facades\Route;
 
@@ -883,6 +954,9 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('activities', ActivityController::class)->names('crm.activities');
     Route::get('activities-calendar', [ActivityController::class, 'calendar'])->name('crm.activities.calendar');
     Route::put('activities/{activity}/complete', [ActivityController::class, 'complete'])->name('crm.activities.complete');
+    
+    // Engagement
+    Route::resource('engagement', EngagementController::class)->names('crm.engagement');
 });
 ```
 
@@ -896,6 +970,7 @@ Add a CRM section to the `sidebarItem` array using the existing `menu` interface
 { title: 'Leads', icon: 'custom-speaker', to: '/crm/leads' },
 { title: 'Deals', icon: 'custom-briefcase', to: '/crm/deals-pipeline' },
 { title: 'Activities', icon: 'custom-calendar', to: '/crm/activities' },
+{ title: 'Engagement', icon: 'custom-chart-line', to: '/crm/engagement' },
 ```
 Use the same icon naming as the rest of the sidebar (e.g. `custom-*` or the project’s vue-tabler-icons).
 
@@ -1331,14 +1406,22 @@ Similar structure to Contacts:
 
 ---
 
-### **PHASE 6: Dashboard & Reports** (3-4 Days)
+### **PHASE 6: Engagement** (2-3 Days)
+
+- Day 1: Backend (engagements migration with polymorphic relation, Model, Controller, Requests, Resource)
+- Day 2: Frontend (Engagement Index list, Create form, filters by type and date)
+- Day 3: **EngagementTimeline** component on Contact/Lead/Deal/Client Show pages; optional engagement score
+
+---
+
+### **PHASE 7: Dashboard & Reports** (3-4 Days)
 
 - Day 1-2: Backend (Dashboard controller, metrics calculations)
 - Day 3-4: Frontend (Metric cards, ApexCharts integration, charts)
 
 ---
 
-### **PHASE 7: Polish & Testing** (3-4 Days)
+### **PHASE 8: Polish & Testing** (3-4 Days)
 
 - Day 1: Notifications setup
 - Day 2: Search & filters enhancement
@@ -1548,6 +1631,12 @@ GET    /crm/activities/{id}              - View activity
 PUT    /crm/activities/{id}              - Update activity
 DELETE /crm/activities/{id}              - Delete activity
 PUT    /crm/activities/{id}/complete     - Mark complete
+
+GET    /crm/engagement                   - List engagements (filters: type, date range, entity)
+POST   /crm/engagement                   - Create engagement
+GET    /crm/engagement/{id}              - View engagement
+PUT    /crm/engagement/{id}              - Update engagement
+DELETE /crm/engagement/{id}               - Delete engagement
 ```
 
 ---
@@ -1750,7 +1839,7 @@ If you need to launch quickly, focus on **MVP features first**:
 - Contact Management (Phase 1)
 - Lead Management (Phase 3)
 - Deal Pipeline (Phase 4)
-- Basic Dashboard (Phase 6 - simplified)
+- Basic Dashboard (Phase 7 - simplified)
 
 **Priority 1 (Should Have):**
 - Client Management (Phase 2)

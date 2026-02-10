@@ -47,6 +47,36 @@ const sidebarItem: menu[] = [
     icon: 'custom-calendar',
     to: '/crm/activities'
   },
+  {
+    title: 'Engagements',
+    icon: 'custom-star',
+    to: '/crm/engagements'
+  },
+  {
+    title: 'Projects',
+    icon: 'custom-kanban',
+    to: '/crm/projects'
+  },
+  {
+    title: 'Tasks',
+    icon: 'custom-clipboard',
+    to: '/crm/tasks'
+  },
+  {
+    title: 'Invoices',
+    icon: 'custom-bill',
+    to: '/crm/invoices'
+  },
+  {
+    title: 'Marketing Automation',
+    icon: 'custom-message-2',
+    to: '/crm/marketing-automations'
+  },
+  {
+    title: 'Unified Inbox',
+    icon: 'custom-status-up',
+    to: '/crm/communications'
+  },
   { header: 'Utilities' },
   {
     title: 'Typography',

@@ -2,13 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\Workflowable;
 use Illuminate\Database\Eloquent\Model;
-
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Deal extends Model
 {
-    use SoftDeletes;
+    use SoftDeletes, Workflowable;
 
     protected $fillable = [
         'title', 'description', 'value', 'currency', 'deal_stage_id',
@@ -55,5 +55,13 @@ class Deal extends Model
     public function activities()
     {
         return $this->morphMany(Activity::class, 'activityable');
+    }
+
+    /**
+     * Get all of the deal's engagements.
+     */
+    public function engagements()
+    {
+        return $this->morphMany(Engagement::class, 'engageable');
     }
 }

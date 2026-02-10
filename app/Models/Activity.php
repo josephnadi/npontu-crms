@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\Workflowable;
 
 class Activity extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Workflowable;
 
     protected $fillable = [
         'type',
@@ -48,5 +49,35 @@ class Activity extends Model
     public function owner()
     {
         return $this->belongsTo(User::class, 'owner_id');
+    }
+
+    // Scopes
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
+    }
+
+    public function scopeCompleted($query)
+    {
+        return $query->where('status', 'completed');
+    }
+
+    public function scopeByType($query, $type)
+    {
+        return $query->where('type', $type);
+    }
+
+    public function scopeOverdue($query)
+    {
+        return $query->where('status', 'pending')
+            ->where('due_date', '<', now());
+    }
+
+    public function markAsCompleted()
+    {
+        return $this->update([
+            'status' => 'completed',
+            'completed_at' => now(),
+        ]);
     }
 }

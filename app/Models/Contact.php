@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\Workflowable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Contact extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, Workflowable;
 
     protected $fillable = [
         'first_name',
@@ -50,6 +51,11 @@ class Contact extends Model
     public function activities()
     {
         return $this->morphMany(Activity::class, 'activityable');
+    }
+
+    public function engagements()
+    {
+        return $this->morphMany(Engagement::class, 'engageable');
     }
 
     public function deals()

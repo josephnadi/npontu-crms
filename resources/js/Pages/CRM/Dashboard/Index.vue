@@ -9,6 +9,8 @@ const props = defineProps({
   pipelineData: Array,
   activityBreakdown: Array,
   recentActivities: Array,
+  highPotentialLeads: Array,
+  criticalTasks: Array,
 });
 
 // Real-time polling
@@ -16,7 +18,7 @@ let pollInterval;
 onMounted(() => {
   pollInterval = setInterval(() => {
     router.reload({ 
-      only: ['metrics', 'pipelineData', 'activityBreakdown', 'recentActivities'],
+      only: ['metrics', 'pipelineData', 'activityBreakdown', 'recentActivities', 'highPotentialLeads', 'criticalTasks'],
       preserveScroll: true 
     });
   }, 30000); // Poll every 30 seconds
@@ -211,10 +213,85 @@ const getColor = (type) => {
             </div>
             <div class="text-h4 font-weight-bold counter-value text-high-emphasis">{{ metrics.pendingActivities }}</div>
             <div class="text-caption text-error mt-1">
-              3 overdue items
+              {{ metrics.slaBreachesCount }} SLA breaches
             </div>
           </v-card>
         </Link>
+      </v-col>
+
+      <!-- AI Insights Row -->
+      <v-col cols="12" md="6">
+        <v-card elevation="2">
+          <v-card-item title="Lead Intelligence">
+            <template v-slot:subtitle>
+              <span class="text-success">{{ metrics.highPotentialLeadsCount }} High Potential Leads</span>
+            </template>
+          </v-card-item>
+          <v-list lines="two">
+            <v-list-item
+              v-for="lead in highPotentialLeads"
+              :key="lead.id"
+              :title="lead.first_name + ' ' + lead.last_name"
+              :subtitle="lead.company_name"
+            >
+              <template v-slot:prepend>
+                <v-avatar color="primary-lighten-5">
+                  <span class="text-primary font-weight-bold">{{ lead.score }}</span>
+                </v-avatar>
+              </template>
+              <template v-slot:append>
+                <v-chip :color="lead.score > 70 ? 'success' : 'warning'" size="small">
+                  {{ lead.score > 70 ? 'Hot' : 'Warm' }}
+                </v-chip>
+              </template>
+            </v-list-item>
+          </v-list>
+          <v-divider></v-divider>
+          <v-card-actions>
+            <v-btn variant="text" color="primary" block :href="route('crm.leads.index')">View All Leads</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-col>
+
+      <v-col cols="12" md="6">
+        <v-card elevation="2">
+          <v-card-item title="Task Intelligence">
+            <template v-slot:subtitle>
+              <span class="text-error">Priority & SLA Tracking</span>
+            </template>
+          </v-card-item>
+          <v-list lines="two">
+            <v-list-item
+              v-for="task in criticalTasks"
+              :key="task.id"
+              :title="task.title"
+              :subtitle="'Priority Score: ' + task.priority_score"
+            >
+              <template v-slot:prepend>
+                <v-icon :color="task.priority === 'high' ? 'error' : 'warning'">
+                  {{ task.priority === 'high' ? 'mdi-alert-circle' : 'mdi-alert' }}
+                </v-icon>
+              </template>
+              <template v-slot:append>
+                <div class="text-right">
+                  <div class="text-caption font-weight-bold" :class="task.escalated_at ? 'text-error' : ''">
+                    {{ task.escalated_at ? 'ESCALATED' : 'In SLA' }}
+                  </div>
+                  <v-progress-linear
+                    :model-value="task.priority_score"
+                    :color="task.priority_score > 70 ? 'error' : 'warning'"
+                    height="4"
+                    rounded
+                  ></v-progress-linear>
+                </div>
+              </template>
+            </v-list-item>
+          </v-list>
+          <v-divider></v-divider>
+          <v-card-actions>
+            <v-btn variant="text" color="primary" block :href="route('crm.activities.index')">Manage Tasks</v-btn>
+          </v-card-actions>
+        </v-card>
       </v-col>
 
       <!-- Charts Row -->

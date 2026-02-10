@@ -4,6 +4,9 @@ import DashboardLayout from '@/layouts/dashboard/DashboardLayout.vue';
 import SvgSprite from '@/components/shared/SvgSprite.vue';
 import ActivityTimeline from '@/components/CRM/ActivityTimeline.vue';
 import ActivityForm from '@/components/CRM/ActivityForm.vue';
+import EngagementTimeline from '@/components/CRM/EngagementTimeline.vue';
+import EngagementForm from '@/components/CRM/EngagementForm.vue';
+import { ref } from 'vue';
 
 const props = defineProps({
   deal: {
@@ -15,6 +18,9 @@ const props = defineProps({
     required: true
   }
 });
+
+const tab = ref('activities');
+const showEngagementModal = ref(false);
 
 const updateStage = (stageId) => {
   router.put(window.route('crm.deals.updateStage', props.deal.id), {
@@ -179,20 +185,76 @@ const deleteDeal = () => {
           </v-row>
         </v-card>
 
-        <v-card class="pa-6">
-          <div class="d-flex justify-space-between align-center mb-4">
-            <h3 class="text-h5 font-weight-bold">Log Activity</h3>
-          </div>
-          <ActivityForm :activityable-type="'App\\Models\\Deal'" :activityable-id="deal.id" />
-        </v-card>
-      </v-col>
+        <v-tabs v-model="tab" color="primary" class="mb-4">
+          <v-tab value="activities">Activities</v-tab>
+          <v-tab value="engagements">Engagements</v-tab>
+        </v-tabs>
 
-      <v-col cols="12" md="4">
-        <div class="mb-6">
-          <h3 class="text-h5 font-weight-bold">Activity Timeline</h3>
-        </div>
-        <ActivityTimeline :activities="deal.activities || []" />
+        <v-window v-model="tab">
+          <v-window-item value="activities">
+            <v-card class="pa-6 mb-6">
+              <div class="d-flex justify-space-between align-center mb-4">
+                <h3 class="text-h5 font-weight-bold">Log Activity</h3>
+              </div>
+              <ActivityForm :activityable-type="'App\\Models\\Deal'" :activityable-id="deal.id" />
+            </v-card>
+
+            <v-card class="pa-6">
+              <div class="mb-6">
+                <h3 class="text-h5 font-weight-bold">Activity Timeline</h3>
+              </div>
+              <ActivityTimeline :activities="deal.activities || []" />
+            </v-card>
+          </v-window-item>
+
+          <v-window-item value="engagements">
+            <v-card class="pa-6">
+              <div class="d-flex justify-space-between align-center mb-4">
+                <h3 class="text-h5 font-weight-bold">Engagement Timeline</h3>
+                <div class="d-flex gap-2">
+                  <v-btn
+                    color="warning"
+                    size="small"
+                    variant="flat"
+                    prepend-icon="mdi-star-plus-outline"
+                    @click="showEngagementModal = true"
+                  >
+                    Log Engagement
+                  </v-btn>
+                  <v-btn
+                    color="secondary"
+                    size="small"
+                    variant="text"
+                    prepend-icon="mdi-star-outline"
+                    @click="router.get(route('crm.engagements.index'))"
+                  >
+                    View All
+                  </v-btn>
+                </div>
+              </div>
+              <v-divider class="mb-4"></v-divider>
+              <EngagementTimeline :engagements="deal.engagements || []" />
+            </v-card>
+          </v-window-item>
+        </v-window>
       </v-col>
     </v-row>
+
+    <!-- Log Engagement Modal -->
+    <v-dialog v-model="showEngagementModal" max-width="700px">
+      <v-card>
+        <v-card-title class="pa-4 bg-warning text-white d-flex justify-space-between align-center">
+          <span>Log Engagement for {{ deal.title }}</span>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="showEngagementModal = false"></v-btn>
+        </v-card-title>
+        <v-card-text class="pa-4 pt-6">
+          <EngagementForm 
+            engageable-type="App\Models\Deal" 
+            :engageable-id="deal.id"
+            @success="showEngagementModal = false"
+          />
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </DashboardLayout>
 </template>
