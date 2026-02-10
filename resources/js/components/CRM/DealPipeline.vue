@@ -23,6 +23,8 @@ props.stages.forEach(stage => {
   localDealsByStage.value[stage.id] = props.deals.filter(deal => deal.deal_stage_id === stage.id);
 });
 
+const isUpdating = ref(false);
+
 const onMove = (evt) => {
   const { added, removed, moved } = evt;
   
@@ -32,29 +34,32 @@ const onMove = (evt) => {
       localDealsByStage.value[id].includes(deal)
     );
 
+    isUpdating.value = true;
     router.put(window.route('crm.deals.updateStage', deal.id), {
       deal_stage_id: toStageId
     }, {
       preserveScroll: true,
+      onFinish: () => {
+        isUpdating.value = false;
+      },
       onSuccess: () => {
-        // Optional: refresh data or show notification
+        // Data is refreshed via props
       }
     });
   }
 };
-
-const getStageTotal = (stageId) => {
-  const deals = localDealsByStage.value[stageId] || [];
-  const total = deals.reduce((sum, deal) => sum + parseFloat(deal.value), 0);
-  return new Intl.NumberFormat('en-GH', {
-    style: 'currency',
-    currency: 'GHS'
-  }).format(total);
-};
 </script>
 
 <template>
-  <div class="pipeline-wrapper pa-4">
+  <div class="pipeline-wrapper pa-4 position-relative">
+    <v-fade-transition>
+      <div v-if="isUpdating" class="updating-overlay d-flex align-center justify-center">
+        <v-chip color="primary" class="px-4 py-2" elevation="4">
+          <v-progress-circular indeterminate size="16" width="2" class="mr-2"></v-progress-circular>
+          Updating Pipeline...
+        </v-chip>
+      </div>
+    </v-fade-transition>
     <div class="pipeline-container d-flex overflow-x-auto pb-4">
       <div 
         v-for="stage in stages" 
@@ -65,15 +70,8 @@ const getStageTotal = (stageId) => {
         <v-card color="grey-lighten-4" flat class="h-100">
           <v-card-title class="d-flex justify-space-between align-center py-3 px-4">
             <span class="text-subtitle-1 font-weight-bold">{{ stage.name }}</span>
-            <v-chip size="small" :color="stage.color" variant="tonal">
-              {{ localDealsByStage[stage.id]?.length || 0 }}
-            </v-chip>
           </v-card-title>
           
-          <v-card-subtitle class="px-4 pb-2 text-caption text-medium-emphasis">
-            Total: {{ getStageTotal(stage.id) }}
-          </v-card-subtitle>
-
           <v-divider></v-divider>
 
           <v-card-text class="pa-2 h-100">
@@ -115,5 +113,14 @@ const getStageTotal = (stageId) => {
 .pipeline-wrapper::-webkit-scrollbar-thumb {
   background: #ccc;
   border-radius: 4px;
+}
+
+.updating-overlay {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  pointer-events: none;
 }
 </style>

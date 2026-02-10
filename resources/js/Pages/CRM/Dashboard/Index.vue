@@ -2,13 +2,28 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import DashboardLayout from '@/layouts/dashboard/DashboardLayout.vue';
 import SvgSprite from '@/components/shared/SvgSprite.vue';
-import { computed } from 'vue';
+import { computed, onMounted, onUnmounted } from 'vue';
 
 const props = defineProps({
   metrics: Object,
   pipelineData: Array,
   activityBreakdown: Array,
   recentActivities: Array,
+});
+
+// Real-time polling
+let pollInterval;
+onMounted(() => {
+  pollInterval = setInterval(() => {
+    router.reload({ 
+      only: ['metrics', 'pipelineData', 'activityBreakdown', 'recentActivities'],
+      preserveScroll: true 
+    });
+  }, 30000); // Poll every 30 seconds
+});
+
+onUnmounted(() => {
+  if (pollInterval) clearInterval(pollInterval);
 });
 
 const formatCurrency = (value) => {
@@ -135,68 +150,76 @@ const getColor = (type) => {
 
       <!-- Stat Cards -->
       <v-col cols="12" sm="6" lg="3">
-        <v-card class="pa-4 stat-card" elevation="0" border>
-          <div class="d-flex align-center mb-2">
-            <v-avatar color="blue-lighten-5" size="40" class="mr-3 icon-avatar">
-              <v-icon color="primary">mdi-account-group</v-icon>
-            </v-avatar>
-            <span class="text-subtitle-2 font-weight-medium">Total Contacts</span>
-          </div>
-          <div class="text-h4 font-weight-bold counter-value">{{ metrics.totalContacts }}</div>
-          <div class="text-caption text-success mt-1">
-            <v-icon size="small">mdi-trending-up</v-icon> 12% from last month
-          </div>
-        </v-card>
+        <Link :href="route('crm.contacts.index')" class="text-decoration-none">
+          <v-card class="pa-4 stat-card" elevation="2">
+            <div class="d-flex align-center mb-2">
+              <v-avatar color="blue-lighten-5" size="40" class="mr-3 icon-avatar">
+                <v-icon color="primary">mdi-account-group</v-icon>
+              </v-avatar>
+              <span class="text-subtitle-2 font-weight-medium text-high-emphasis">Total Contacts</span>
+            </div>
+            <div class="text-h4 font-weight-bold counter-value text-high-emphasis">{{ metrics.totalContacts }}</div>
+            <div class="text-caption text-success mt-1">
+              <v-icon size="small">mdi-trending-up</v-icon> 12% from last month
+            </div>
+          </v-card>
+        </Link>
       </v-col>
 
       <v-col cols="12" sm="6" lg="3">
-        <v-card class="pa-4 stat-card" elevation="0" border>
-          <div class="d-flex align-center mb-2">
-            <v-avatar color="green-lighten-5" size="40" class="mr-3 icon-avatar">
-              <v-icon color="success">mdi-briefcase-check</v-icon>
-            </v-avatar>
-            <span class="text-subtitle-2 font-weight-medium">Open Deals</span>
-          </div>
-          <div class="text-h4 font-weight-bold counter-value">{{ metrics.openDeals }}</div>
-          <div class="text-caption text-success mt-1">
-            <v-icon size="small">mdi-trending-up</v-icon> 5 new this week
-          </div>
-        </v-card>
+        <Link :href="route('crm.deals.pipeline')" class="text-decoration-none">
+          <v-card class="pa-4 stat-card" elevation="2">
+            <div class="d-flex align-center mb-2">
+              <v-avatar color="green-lighten-5" size="40" class="mr-3 icon-avatar">
+                <v-icon color="success">mdi-briefcase-check</v-icon>
+              </v-avatar>
+              <span class="text-subtitle-2 font-weight-medium text-high-emphasis">Open Deals</span>
+            </div>
+            <div class="text-h4 font-weight-bold counter-value text-high-emphasis">{{ metrics.openDeals }}</div>
+            <div class="text-caption text-success mt-1">
+              <v-icon size="small">mdi-trending-up</v-icon> 5 new this week
+            </div>
+          </v-card>
+        </Link>
       </v-col>
 
       <v-col cols="12" sm="6" lg="3">
-        <v-card class="pa-4 stat-card" elevation="0" border>
-          <div class="d-flex align-center mb-2">
-            <v-avatar color="orange-lighten-5" size="40" class="mr-3 icon-avatar">
-              <v-icon color="warning">mdi-currency-usd</v-icon>
-            </v-avatar>
-            <span class="text-subtitle-2 font-weight-medium">Pipeline Value</span>
-          </div>
-          <div class="text-h4 font-weight-bold counter-value">{{ formatCurrency(metrics.totalValue) }}</div>
-          <div class="text-caption text-warning mt-1">
-            Expected by end of quarter
-          </div>
-        </v-card>
+        <Link :href="route('crm.deals.index')" class="text-decoration-none">
+          <v-card class="pa-4 stat-card" elevation="2">
+            <div class="d-flex align-center mb-2">
+              <v-avatar color="orange-lighten-5" size="40" class="mr-3 icon-avatar">
+                <v-icon color="warning">mdi-currency-usd</v-icon>
+              </v-avatar>
+              <span class="text-subtitle-2 font-weight-medium text-high-emphasis">Pipeline Value</span>
+            </div>
+            <div class="text-h4 font-weight-bold counter-value text-high-emphasis">{{ formatCurrency(metrics.totalValue) }}</div>
+            <div class="text-caption text-warning mt-1">
+              Expected by end of quarter
+            </div>
+          </v-card>
+        </Link>
       </v-col>
 
       <v-col cols="12" sm="6" lg="3">
-        <v-card class="pa-4 stat-card" elevation="0" border>
-          <div class="d-flex align-center mb-2">
-            <v-avatar color="purple-lighten-5" size="40" class="mr-3 icon-avatar">
-              <v-icon color="secondary">mdi-calendar-clock</v-icon>
-            </v-avatar>
-            <span class="text-subtitle-2 font-weight-medium">Pending Tasks</span>
-          </div>
-          <div class="text-h4 font-weight-bold counter-value">{{ metrics.pendingActivities }}</div>
-          <div class="text-caption text-error mt-1">
-            3 overdue items
-          </div>
-        </v-card>
+        <Link :href="route('crm.activities.index')" class="text-decoration-none">
+          <v-card class="pa-4 stat-card" elevation="2">
+            <div class="d-flex align-center mb-2">
+              <v-avatar color="purple-lighten-5" size="40" class="mr-3 icon-avatar">
+                <v-icon color="secondary">mdi-calendar-clock</v-icon>
+              </v-avatar>
+              <span class="text-subtitle-2 font-weight-medium text-high-emphasis">Pending Tasks</span>
+            </div>
+            <div class="text-h4 font-weight-bold counter-value text-high-emphasis">{{ metrics.pendingActivities }}</div>
+            <div class="text-caption text-error mt-1">
+              3 overdue items
+            </div>
+          </v-card>
+        </Link>
       </v-col>
 
       <!-- Charts Row -->
       <v-col cols="12" md="8">
-        <v-card elevation="0" border>
+        <v-card elevation="2">
           <v-card-item title="Sales Pipeline Funnel">
             <template v-slot:append>
               <v-btn icon variant="text" size="small">
@@ -216,7 +239,7 @@ const getColor = (type) => {
       </v-col>
 
       <v-col cols="12" md="4">
-        <v-card elevation="0" border height="100%">
+        <v-card elevation="2" height="100%">
           <v-card-item title="Activity Breakdown"></v-card-item>
           <v-card-text class="d-flex flex-column align-center justify-center pt-8">
             <apexchart
@@ -231,7 +254,7 @@ const getColor = (type) => {
 
       <!-- Recent Activities -->
       <v-col cols="12">
-        <v-card elevation="0" border>
+        <v-card elevation="2">
           <v-card-item title="Recent Activities">
             <template v-slot:append>
               <Link :href="route('crm.activities.index')">
@@ -306,48 +329,69 @@ const getColor = (type) => {
 }
 
 .stat-card {
-  transition: all 0.3s ease-in-out;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
-  animation: slideUp 0.6s ease-out backwards;
+  animation: cardEntrance 0.8s cubic-bezier(0.4, 0, 0.2, 1) backwards;
+  cursor: pointer;
+  z-index: 1;
 }
 
-.stat-card:nth-child(1) { animation-delay: 0.1s; }
-.stat-card:nth-child(2) { animation-delay: 0.2s; }
-.stat-card:nth-child(3) { animation-delay: 0.3s; }
-.stat-card:nth-child(4) { animation-delay: 0.4s; }
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.05) 0%, transparent 100%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  z-index: -1;
+}
+
+.stat-card:hover::before {
+  opacity: 1;
+}
 
 .stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+  transform: translateY(-12px) scale(1.03);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.15) !important;
   border-color: rgb(var(--v-theme-primary)) !important;
 }
 
 .icon-avatar {
-  transition: transform 0.3s ease;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .stat-card:hover .icon-avatar {
-  transform: scale(1.1) rotate(5deg);
+  transform: scale(1.2) rotate(10deg);
+  background-color: rgb(var(--v-theme-primary)) !important;
+}
+
+.stat-card:hover .icon-avatar .v-icon {
+  color: white !important;
 }
 
 .counter-value {
-  animation: fadeIn 1s ease-out;
+  transition: all 0.3s ease;
 }
 
-@keyframes slideUp {
+.stat-card:hover .counter-value {
+  color: rgb(var(--v-theme-primary)) !important;
+  letter-spacing: 0.5px;
+}
+
+@keyframes cardEntrance {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(30px) scale(0.95);
+    filter: blur(10px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+    filter: blur(0);
   }
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
 }
 </style>

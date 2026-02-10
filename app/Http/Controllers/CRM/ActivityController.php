@@ -6,13 +6,34 @@ use App\Models\Activity;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Log;
 
 class ActivityController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $activities = Activity::with('activityable')
+            ->when($request->search, function ($query, $search) {
+                $query->where('subject', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            })
+            ->when($request->type, function ($query, $type) {
+                if ($type !== 'all') {
+                    $query->where('type', $type);
+                }
+            })
+            ->when($request->status, function ($query, $status) {
+                if ($status !== 'all') {
+                    $query->where('status', $status);
+                }
+            })
+            ->orderBy('activity_date', 'desc')
+            ->paginate(10)
+            ->withQueryString();
+
         return Inertia::render('CRM/Activities/Index', [
-            'activities' => Activity::with('activityable')->orderBy('activity_date', 'desc')->get(),
+            'activities' => $activities,
+            'filters' => $request->only(['search', 'type', 'status']),
         ]);
     }
 
@@ -48,13 +69,20 @@ class ActivityController extends Controller
             'activityable_id' => 'required|integer',
         ]);
 
-        Activity::create($validated);
+        Activity::create([
+            ...$validated,
+            'owner_id' => auth()->id(),
+        ]);
 
+        Log::info('Activity created', ['owner_id' => auth()->id(), 'type' => $validated['type'] ?? null]);
         return redirect()->back()->with('success', 'Activity created successfully');
     }
 
     public function update(Request $request, Activity $activity)
     {
+        if ($activity->owner_id !== auth()->id()) {
+            abort(403);
+        }
         $validated = $request->validate([
             'type' => 'required|string|in:call,meeting,email,task,note',
             'subject' => 'required|string|max:255',
@@ -70,12 +98,17 @@ class ActivityController extends Controller
             $activity->update(['completed_at' => now()]);
         }
 
+        Log::info('Activity updated', ['activity_id' => $activity->id, 'user_id' => auth()->id()]);
         return redirect()->back()->with('success', 'Activity updated successfully');
     }
 
     public function destroy(Activity $activity)
     {
+        if ($activity->owner_id !== auth()->id()) {
+            abort(403);
+        }
         $activity->delete();
+        Log::info('Activity deleted', ['activity_id' => $activity->id, 'user_id' => auth()->id()]);
         return redirect()->back()->with('success', 'Activity deleted successfully');
     }
 }

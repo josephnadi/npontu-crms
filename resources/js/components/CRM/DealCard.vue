@@ -23,7 +23,7 @@ const formatDate = (date) => {
 </script>
 
 <template>
-  <v-card class="mb-3 deal-card" elevation="2">
+  <v-card class="mb-3 deal-card" elevation="3">
     <v-card-text class="pa-3">
       <div class="d-flex justify-space-between align-start mb-1">
         <div class="d-flex align-center">
@@ -75,12 +75,34 @@ const formatDate = (date) => {
 <style scoped>
 .deal-card {
   cursor: grab;
-  transition: transform 0.2s;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: dealEntrance 0.5s cubic-bezier(0.4, 0, 0.2, 1) backwards;
 }
+
 .deal-card:active {
   cursor: grabbing;
+  transform: scale(0.95);
+  box-shadow: 0 5px 10px rgba(0,0,0,0.2) !important;
 }
+
 .deal-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-8px) scale(1.04);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.2) !important;
+  border-color: rgb(var(--v-theme-primary)) !important;
+}
+
+.deal-card:hover .text-primary {
+  letter-spacing: 0.5px;
+}
+
+@keyframes dealEntrance {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 </style>

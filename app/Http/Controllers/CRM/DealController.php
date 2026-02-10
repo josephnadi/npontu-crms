@@ -8,20 +8,80 @@ use Illuminate\Http\Request;
 use App\Models\Deal;
 use App\Models\DealStage;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Log;
 
 class DealController extends Controller
 {
-    public function index()
+    public function export(Request $request)
     {
+        $deals = Deal::with(['stage', 'contact', 'client'])
+            ->when($request->search, function ($query, $search) {
+                $query->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            })
+            ->when($request->stage_id, function ($query, $stageId) {
+                $query->where('deal_stage_id', $stageId);
+            })
+            ->when($request->status, function ($query, $status) {
+                $query->where('status', $status);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $headers = ['ID', 'Title', 'Stage', 'Value', 'Probability', 'Status', 'Expected Close', 'Contact', 'Client'];
+        $callback = function () use ($deals, $headers) {
+            $out = fopen('php://output', 'w');
+            fputcsv($out, $headers);
+            foreach ($deals as $d) {
+                fputcsv($out, [
+                    $d->id,
+                    $d->title,
+                    optional($d->stage)->name,
+                    $d->value,
+                    $d->probability,
+                    $d->status,
+                    optional($d->expected_close_date)?->format('Y-m-d'),
+                    $d->contact ? ($d->contact->first_name . ' ' . $d->contact->last_name) : $d->contact_name,
+                    $d->client ? $d->client->name : $d->client_name,
+                ]);
+            }
+            fclose($out);
+        };
+
+        return response()->streamDownload($callback, 'deals_export.csv', [
+            'Content-Type' => 'text/csv',
+        ]);
+    }
+    public function index(Request $request)
+    {
+        $deals = Deal::with(['stage', 'contact', 'client'])
+            ->when($request->search, function ($query, $search) {
+                $query->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhere('contact_name', 'like', "%{$search}%")
+                    ->orWhere('client_name', 'like', "%{$search}%");
+            })
+            ->when($request->stage_id, function ($query, $stageId) {
+                $query->where('deal_stage_id', $stageId);
+            })
+            ->when($request->status, function ($query, $status) {
+                $query->where('status', $status);
+            })
+            ->orderBy('created_at', 'desc')
+            ->paginate(10)
+            ->withQueryString();
+
         return Inertia::render('CRM/Deals/Index', [
-            'deals' => Deal::with(['stage', 'contact', 'client'])->latest()->get(),
+            'deals' => $deals,
+            'filters' => $request->only(['search', 'stage_id', 'status']),
+            'stages' => DealStage::orderBy('order_column')->get(),
         ]);
     }
 
     public function pipeline()
     {
         $stages = DealStage::orderBy('order_column')->get();
-        $deals = Deal::with(['stage', 'contact', 'client'])->get();
+        $deals = Deal::with(['stage', 'contact', 'client'])->where('status', 'open')->get();
 
         return Inertia::render('CRM/Deals/Pipeline', [
             'stages' => $stages,
@@ -57,7 +117,8 @@ class DealController extends Controller
             ...$validated,
             'owner_id' => auth()->id(),
             'created_by' => auth()->id(),
-            'currency' => 'GHS',
+            'currency' => config('crm.currency', 'GHS'),
+            'status' => 'open',
         ]);
 
         return redirect()->route('crm.deals.pipeline')->with('success', 'Deal created successfully');
@@ -73,6 +134,7 @@ class DealController extends Controller
             'deal_stage_id' => $request->deal_stage_id,
         ]);
 
+        Log::info('Deal stage updated', ['deal_id' => $deal->id, 'deal_stage_id' => $request->deal_stage_id, 'user_id' => auth()->id()]);
         return back()->with('success', 'Deal stage updated');
     }
 
@@ -98,6 +160,9 @@ class DealController extends Controller
 
     public function update(Request $request, Deal $deal)
     {
+        if ($deal->owner_id !== auth()->id()) {
+            abort(403);
+        }
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -116,13 +181,18 @@ class DealController extends Controller
 
         $deal->update($validated);
 
+        Log::info('Deal updated', ['deal_id' => $deal->id, 'user_id' => auth()->id()]);
         return redirect()->route('crm.deals.index')->with('success', 'Deal updated successfully');
     }
 
     public function destroy(Deal $deal)
     {
+        if ($deal->owner_id !== auth()->id()) {
+            abort(403);
+        }
         $deal->delete();
 
+        Log::info('Deal deleted', ['deal_id' => $deal->id, 'user_id' => auth()->id()]);
         return redirect()->route('crm.deals.index')->with('success', 'Deal deleted successfully');
     }
 }

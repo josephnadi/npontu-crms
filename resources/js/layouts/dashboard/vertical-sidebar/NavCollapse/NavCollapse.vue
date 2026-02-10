@@ -14,7 +14,7 @@ const props = defineProps({ item: Object, level: Number });
     <!---Dropdown  -->
     <!-- ---------------------------------------------- -->
     <template v-slot:activator="{ props }">
-      <v-list-item v-bind="props" :value="item.title" rounded color="primary">
+      <v-list-item v-bind="props" :value="item.title" rounded>
         <!---Icon  -->
         <template v-slot:prepend>
           <SvgSprite :name="item.icon || ''" :level="level" />
@@ -40,3 +40,28 @@ const props = defineProps({ item: Object, level: Number });
   <!---End Item Sub Header -->
   <!-- ---------------------------------------------- -->
 </template>
+
+<style scoped>
+.v-list-item {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.v-list-item:hover {
+  background-color: rgba(var(--v-theme-primary), 0.08) !important;
+}
+
+.v-list-item:hover :deep(.pc-icon) {
+  transform: scale(1.1) translateX(2px);
+}
+
+.v-list-item:hover .v-list-item-title {
+  transform: translateX(4px);
+}
+
+:deep(.pc-icon),
+.v-list-item-title {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Rotate arrow icon on hover/open if needed, but Vuetify handles group arrows */
+</style>

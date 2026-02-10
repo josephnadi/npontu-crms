@@ -26,7 +26,7 @@ const isExternal = computed(() => props.item.getURL || props.item.type === 'exte
   <Link
     v-if="isInternal"
     :href="linkHref"
-    class="v-list-item v-list-item--rounded mb-1 text-primary d-flex align-center"
+    class="v-list-item v-list-item--rounded mb-1 d-flex align-center"
     :class="{ 'v-list-item--disabled': item.disabled }"
   >
     <div class="v-list-item__prepend me-3">
@@ -59,7 +59,6 @@ const isExternal = computed(() => props.item.getURL || props.item.type === 'exte
     :target="'_blank'"
     rounded
     class="mb-1"
-    color="primary"
     :disabled="item.disabled"
   >
     <template v-slot:prepend>
@@ -84,3 +83,46 @@ const isExternal = computed(() => props.item.getURL || props.item.type === 'exte
     </template>
   </v-list-item>
 </template>
+
+<style scoped>
+.v-list-item {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.v-list-item:hover {
+  background-color: rgba(var(--v-theme-primary), 0.08) !important;
+}
+
+.v-list-item:hover .v-list-item__prepend :deep(.pc-icon) {
+  transform: scale(1.1) translateX(2px);
+}
+
+.v-list-item:hover .v-list-item-title {
+  transform: translateX(4px);
+}
+
+.v-list-item__prepend :deep(.pc-icon),
+.v-list-item-title {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Indicator line on hover */
+.v-list-item::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 0;
+  width: 3px;
+  background-color: #fff;
+  transition: all 0.3s ease;
+  border-radius: 0 4px 4px 0;
+}
+
+.v-list-item:hover::after {
+  height: 60%;
+}
+</style>
+

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Client;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Log;
 
 class ClientController extends Controller
 {
@@ -75,6 +76,9 @@ class ClientController extends Controller
 
     public function update(Request $request, Client $client)
     {
+        if ($client->owner_id !== auth()->id()) {
+            abort(403);
+        }
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'industry' => 'nullable|string|max:100',
@@ -90,14 +94,19 @@ class ClientController extends Controller
 
         $client->update($validated);
 
+        Log::info('Client updated', ['client_id' => $client->id, 'user_id' => auth()->id()]);
         return redirect()->route('crm.clients.index')
             ->with('success', 'Client updated successfully.');
     }
 
     public function destroy(Client $client)
     {
+        if ($client->owner_id !== auth()->id()) {
+            abort(403);
+        }
         $client->delete();
 
+        Log::info('Client deleted', ['client_id' => $client->id, 'user_id' => auth()->id()]);
         return redirect()->route('crm.clients.index')
             ->with('success', 'Client deleted successfully.');
     }

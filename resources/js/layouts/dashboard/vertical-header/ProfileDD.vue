@@ -3,6 +3,9 @@ import { ref } from 'vue';
 import SvgSprite from '@/components/shared/SvgSprite.vue';
 
 import { router } from '@inertiajs/vue3';
+import { usePage } from '@inertiajs/vue3';
+const page = usePage();
+const user = page.props.auth?.user;
 
 const tab = ref(null);
 
@@ -12,43 +15,22 @@ function logout() {
 
 const profiledata1 = ref([
   {
-    title: 'Edit profile',
-    icon: 'custom-edit'
+    title: 'Edit Profile',
+    icon: 'custom-edit',
+    to: '/profile/edit'
   },
   {
     title: 'View Profile',
-    icon: 'custom-user-1'
-  },
-  {
-    title: 'Social Profile',
-    icon: 'custom-users'
-  },
-  {
-    title: 'Billing',
-    icon: 'custom-wallet'
+    icon: 'custom-user-1',
+    to: '/profile'
   }
 ]);
 
 const profiledata2 = ref([
   {
-    title: 'Support',
-    icon: 'custom-support'
-  },
-  {
-    title: 'Account settings',
-    icon: 'custom-user-1'
-  },
-  {
-    title: 'Privacy center',
-    icon: 'custom-lock'
-  },
-  {
-    title: 'Feedback',
-    icon: 'custom-comment'
-  },
-  {
-    title: 'History',
-    icon: 'custom-history'
+    title: 'Account Settings',
+    icon: 'custom-user-1',
+    to: '/settings'
   }
 ]);
 </script>
@@ -60,11 +42,11 @@ const profiledata2 = ref([
   <div>
     <div class="d-flex align-center pa-5">
       <v-avatar size="40" class="me-2">
-        <img src="@/assets/images/users/avatar-6.png" width="40" alt="profile" />
+        <img :src="user?.avatar ? '/storage/' + user.avatar : '/src/assets/images/users/avatar-6.png'" width="40" alt="profile" />
       </v-avatar>
       <div>
-        <h6 class="text-subtitle-1 mb-0">JWT User</h6>
-        <p class="text-caption text-lightText mb-0">UI/UX Designer</p>
+        <h6 class="text-subtitle-1 mb-0">{{ user?.name || 'User' }}</h6>
+        <p class="text-caption text-lightText mb-0">{{ user?.email }}</p>
       </div>
       <div class="ms-auto">
         <v-btn variant="text" aria-label="logout" color="error" rounded="sm" icon size="large" @click="logout()">
@@ -105,7 +87,9 @@ const profiledata2 = ref([
                 </div>
               </template>
 
-              <v-list-item-title class="text-h6">{{ item.title }}</v-list-item-title>
+              <v-list-item-title class="text-h6">
+                <a :href="item.to" class="text-decoration-none text-primary">{{ item.title }}</a>
+              </v-list-item-title>
             </v-list-item>
             <v-list-item color="primary" :base-color="'secondary'" rounded="md" @click="logout()">
               <template v-slot:prepend>

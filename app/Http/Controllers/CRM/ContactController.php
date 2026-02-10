@@ -7,6 +7,7 @@ use App\Models\Contact;
 use App\Models\Client;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Log;
 
 class ContactController extends Controller
 {
@@ -86,6 +87,9 @@ class ContactController extends Controller
 
     public function update(Request $request, Contact $contact)
     {
+        if ($contact->owner_id !== auth()->id()) {
+            abort(403);
+        }
         $validated = $request->validate([
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
@@ -105,12 +109,17 @@ class ContactController extends Controller
 
         $contact->update($validated);
 
+        Log::info('Contact updated', ['contact_id' => $contact->id, 'user_id' => auth()->id()]);
         return redirect()->route('crm.contacts.index')->with('success', 'Contact updated successfully.');
     }
 
     public function destroy(Contact $contact)
     {
+        if ($contact->owner_id !== auth()->id()) {
+            abort(403);
+        }
         $contact->delete();
+        Log::info('Contact deleted', ['contact_id' => $contact->id, 'user_id' => auth()->id()]);
         return redirect()->route('crm.contacts.index')->with('success', 'Contact deleted successfully.');
     }
 }

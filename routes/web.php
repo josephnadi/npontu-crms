@@ -7,6 +7,9 @@ use App\Http\Controllers\CRM\ClientController;
 use App\Http\Controllers\CRM\ContactController;
 use App\Http\Controllers\CRM\LeadController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -50,6 +53,7 @@ Route::middleware('auth')->group(function () {
         // Deals
         Route::get('/deals-pipeline', [DealController::class, 'pipeline'])->name('crm.deals.pipeline');
         Route::put('/deals/{deal}/stage', [DealController::class, 'updateStage'])->name('crm.deals.updateStage');
+        Route::get('/deals-export', [DealController::class, 'export'])->name('crm.deals.export');
         Route::resource('deals', DealController::class)->names('crm.deals');
 
         // Activities
@@ -66,6 +70,20 @@ Route::middleware('auth')->group(function () {
         Route::post('/leads/{lead}/convert', [LeadController::class, 'convert'])->name('crm.leads.convert');
         Route::resource('leads', LeadController::class)->names('crm.leads');
     });
+
+        // Profile
+        Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+        Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+        // Settings
+        Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+        Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
+
+        // Notifications
+        Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.readAll');
+        Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 });
 
 /*

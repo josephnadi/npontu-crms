@@ -1,29 +1,31 @@
 <script setup>
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import DashboardLayout from '@/layouts/dashboard/DashboardLayout.vue';
 import SvgSprite from '@/components/shared/SvgSprite.vue';
 
 const props = defineProps({
   activities: {
-    type: Array,
+    type: Object,
     required: true
-  }
+  },
+  filters: Object,
 });
 
-const search = ref('');
-const typeFilter = ref('all');
-const statusFilter = ref('all');
+const search = ref(props.filters?.search || '');
+const typeFilter = ref(props.filters?.type || 'all');
+const statusFilter = ref(props.filters?.status || 'all');
 
-const filteredActivities = computed(() => {
-  return props.activities.filter(activity => {
-    const matchesSearch = activity.subject.toLowerCase().includes(search.value.toLowerCase()) ||
-                         activity.description?.toLowerCase().includes(search.value.toLowerCase());
-    const matchesType = typeFilter.value === 'all' || activity.type === typeFilter.value;
-    const matchesStatus = statusFilter.value === 'all' || activity.status === statusFilter.value;
-    return matchesSearch && matchesType && matchesStatus;
+const applyFilters = () => {
+  router.get(route('crm.activities.index'), {
+    search: search.value,
+    type: typeFilter.value,
+    status: statusFilter.value
+  }, {
+    preserveState: true,
+    replace: true
   });
-});
+};
 
 const deleteActivity = (id) => {
   if (confirm('Are you sure you want to delete this activity?')) {
@@ -105,6 +107,7 @@ const getEntityName = (activity) => {
                   hide-details
                   variant="outlined"
                   density="comfortable"
+                  @keyup.enter="applyFilters"
                 ></v-text-field>
               </v-col>
               <v-col cols="12" md="3">
@@ -116,6 +119,7 @@ const getEntityName = (activity) => {
                   variant="outlined"
                   density="comfortable"
                   class="text-capitalize"
+                  @update:modelValue="applyFilters"
                 ></v-select>
               </v-col>
               <v-col cols="12" md="3">
@@ -127,6 +131,7 @@ const getEntityName = (activity) => {
                   variant="outlined"
                   density="comfortable"
                   class="text-capitalize"
+                  @update:modelValue="applyFilters"
                 ></v-select>
               </v-col>
             </v-row>
@@ -146,7 +151,7 @@ const getEntityName = (activity) => {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="activity in filteredActivities" :key="activity.id">
+              <tr v-for="activity in activities.data" :key="activity.id">
                 <td>
                   <div class="d-flex align-center">
                     <v-avatar :color="getColor(activity.type)" size="32" class="mr-3">
@@ -205,7 +210,7 @@ const getEntityName = (activity) => {
                   </v-menu>
                 </td>
               </tr>
-              <tr v-if="filteredActivities.length === 0">
+              <tr v-if="activities.data.length === 0">
                 <td colspan="6" class="text-center py-8 text-grey">
                   No activities found matching your criteria.
                 </td>
@@ -213,6 +218,17 @@ const getEntityName = (activity) => {
             </tbody>
           </v-table>
         </v-card>
+      </v-col>
+      <v-col cols="12">
+        <div class="pa-4 d-flex justify-center">
+          <v-pagination
+            v-model="activities.current_page"
+            :length="activities.last_page"
+            @update:modelValue="router.get(route('crm.activities.index'), { page: $event, search, type: typeFilter, status: statusFilter }, { preserveState: true })"
+            size="small"
+            active-color="primary"
+          ></v-pagination>
+        </div>
       </v-col>
     </v-row>
   </DashboardLayout>

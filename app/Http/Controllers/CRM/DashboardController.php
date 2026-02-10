@@ -16,17 +16,15 @@ class DashboardController extends Controller
     {
         // 1. Stat Cards
         $totalContacts = Contact::count();
-        $openDealsCount = Deal::whereHas('stage', function($query) {
-            $query->whereNotIn('name', ['Won', 'Lost']);
-        })->count();
-        $totalDealValue = Deal::whereHas('stage', function($query) {
-            $query->whereNotIn('name', ['Lost']);
-        })->sum('value');
+        $openDealsCount = Deal::where('status', 'open')->count();
+        $totalDealValue = Deal::where('status', 'open')->sum('value');
         $activeActivitiesCount = Activity::where('status', 'pending')->count();
 
         // 2. Pipeline Funnel (Deals by Stage)
-        $pipelineData = DealStage::withCount('deals')
-            ->orderBy('order')
+        $pipelineData = DealStage::withCount(['deals' => function ($q) {
+                $q->where('status', 'open');
+            }])
+            ->orderBy('order_column')
             ->get()
             ->map(function ($stage) {
                 return [
