@@ -12,6 +12,7 @@
     "@fontsource/public-sans": "^5.0",
     "@fontsource/roboto": "^5.0",
     "@inertiajs/vue3": "^2.3.13",
+    "@mdi/font": "^7.4.47",
     "@vitejs/plugin-vue": "^6.0.4",
     "apexcharts": "^5.3",
     "lodash": "^4.17.23",

@@ -58,7 +58,8 @@ header {
 .v-toolbar {
   &.v-app-bar {
     background-color: rgba(var(--v-theme-containerBg), 0.8);
-    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
   }
 }
 

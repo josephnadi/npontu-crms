@@ -1,8 +1,9 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import DashboardLayout from '@/layouts/dashboard/DashboardLayout.vue';
 import SvgSprite from '@/components/shared/SvgSprite.vue';
+import debounce from 'lodash/debounce';
 
 const props = defineProps({
   engagements: {
@@ -15,22 +16,42 @@ const props = defineProps({
 
 const search = ref(props.filters?.search || '');
 const typeFilter = ref(props.filters?.type || 'all');
-const dateRange = ref(props.filters?.date_range || '');
+const dateRange = ref('');
+const loading = ref(false);
 
 const applyFilters = () => {
+  loading.value = true;
   router.get(route('crm.engagements.index'), {
     search: search.value,
     type: typeFilter.value,
-    date_range: dateRange.value,
   }, {
     preserveState: true,
-    replace: true
+    replace: true,
+    preserveScroll: true,
+    onStart: () => loading.value = true,
+    onFinish: () => loading.value = false
   });
 };
+
+watch([search, typeFilter], debounce(() => {
+  applyFilters();
+}, 500));
 
 const deleteEngagement = (id) => {
   if (confirm('Are you sure you want to delete this engagement?')) {
     router.delete(route('crm.engagements.destroy', id));
+  }
+};
+
+const convertToDeal = (id) => {
+  if (confirm('Convert this engagement to a new Deal?')) {
+    router.post(route('crm.engagements.convert-to-deal', id));
+  }
+};
+
+const convertToTicket = (id) => {
+  if (confirm('Create a support ticket from this engagement?')) {
+    router.post(route('crm.engagements.convert-to-ticket', id));
   }
 };
 
@@ -141,7 +162,6 @@ const getEntityName = (engagement) => {
                 density="compact"
                 hide-details
                 style="width: 250px;"
-                @keyup.enter="applyFilters"
               ></v-text-field>
               <v-select
                 v-model="typeFilter"
@@ -151,7 +171,6 @@ const getEntityName = (engagement) => {
                 density="compact"
                 hide-details
                 style="width: 150px;"
-                @update:model-value="applyFilters"
               ></v-select>
             </div>
           </v-card-title>
@@ -195,9 +214,48 @@ const getEntityName = (engagement) => {
                   </v-chip>
                 </td>
                 <td class="text-right">
-                  <v-btn icon variant="text" size="small" color="error" @click="deleteEngagement(item.id)">
-                    <SvgSprite name="custom-trash" size="18" />
-                  </v-btn>
+                  <v-menu>
+                    <template v-slot:activator="{ props }">
+                      <v-btn size="small" v-bind="props" variant="text">
+                        <v-icon color="primary">mdi-pencil</v-icon>
+                      </v-btn>
+                    </template>
+                    <v-list>
+                      <v-list-item :to="route('crm.engagements.show', item.id)">
+                        <template v-slot:prepend>
+                          <v-icon>mdi-eye</v-icon>
+                        </template>
+                        <v-list-item-title>View Details</v-list-item-title>
+                      </v-list-item>
+                      <v-list-item :to="route('crm.engagements.edit', item.id)">
+                        <template v-slot:prepend>
+                          <v-icon>mdi-pencil</v-icon>
+                        </template>
+                        <v-list-item-title>Edit Engagement</v-list-item-title>
+                      </v-list-item>
+                      <v-list-item
+                        v-if="item.engageable_type !== 'App\\Models\\Deal'"
+                        @click="convertToDeal(item.id)"
+                      >
+                        <template v-slot:prepend>
+                          <v-icon>mdi-handshake-outline</v-icon>
+                        </template>
+                        <v-list-item-title>Convert to Deal</v-list-item-title>
+                      </v-list-item>
+                      <v-list-item @click="convertToTicket(item.id)">
+                        <template v-slot:prepend>
+                          <v-icon>mdi-ticket-outline</v-icon>
+                        </template>
+                        <v-list-item-title>Convert to Ticket</v-list-item-title>
+                      </v-list-item>
+                      <v-list-item @click="deleteEngagement(item.id)">
+                        <template v-slot:prepend>
+                          <SvgSprite name="custom-trash" size="18" />
+                        </template>
+                        <v-list-item-title>Delete Engagement</v-list-item-title>
+                      </v-list-item>
+                    </v-list>
+                  </v-menu>
                 </td>
               </tr>
               <tr v-if="engagements.data.length === 0">

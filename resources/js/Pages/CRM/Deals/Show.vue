@@ -51,6 +51,58 @@ const deleteDeal = () => {
     router.delete(window.route('crm.deals.destroy', props.deal.id));
   }
 };
+
+const showConvertDialog = ref(false);
+const showConvertLeadDialog = ref(false);
+const showTicketConversionDialog = ref(false);
+const converting = ref(false);
+const convertingToLead = ref(false);
+const convertingToTicket = ref(false);
+const showConvertEngagementDialog = ref(false);
+const convertingToEngagement = ref(false);
+
+const convertToProject = () => {
+  converting.value = true;
+  router.post(window.route('crm.deals.convert', props.deal.id), {}, {
+    onSuccess: () => {
+      showConvertDialog.value = false;
+      converting.value = false;
+    },
+    onError: () => {
+      converting.value = false;
+    }
+  });
+};
+
+const convertToEngagement = () => {
+  convertingToEngagement.value = true;
+  router.post(window.route('crm.deals.convert-to-engagement', props.deal.id), {}, {
+    onFinish: () => {
+      convertingToEngagement.value = false;
+      showConvertEngagementDialog.value = false;
+    }
+  });
+};
+
+const convertToLead = () => {
+  convertingToLead.value = true;
+  router.post(window.route('crm.deals.convert-to-lead', props.deal.id), {}, {
+    onFinish: () => {
+      convertingToLead.value = false;
+      showConvertLeadDialog.value = false;
+    }
+  });
+};
+
+const convertToTicket = () => {
+  convertingToTicket.value = true;
+  router.post(window.route('crm.deals.convert-to-ticket', props.deal.id), {}, {
+    onFinish: () => {
+      convertingToTicket.value = false;
+      showTicketConversionDialog.value = false;
+    }
+  });
+};
 </script>
 
 <template>
@@ -175,12 +227,62 @@ const deleteDeal = () => {
               </div>
             </v-col>
 
-            <v-col cols="12" class="mt-6 d-flex justify-end">
-               <v-btn color="error" variant="text" class="mr-auto" @click="deleteDeal">Delete Deal</v-btn>
-               <Link :href="route('crm.deals.edit', deal.id)" class="text-decoration-none mr-2">
-                 <v-btn variant="outlined" color="secondary">Edit Deal</v-btn>
+            <v-col cols="12" class="mt-6 d-flex justify-end gap-2">
+               <v-btn color="error" variant="text" class="mr-auto" @click="deleteDeal" title="Delete Deal">
+                 <v-icon>mdi-delete</v-icon>
+               </v-btn>
+               
+               <v-btn 
+                 v-if="deal.status === 'open'"
+                 color="success" 
+                 variant="outlined" 
+                 @click="showConvertDialog = true"
+                 title="Convert to Project"
+               >
+                 <v-icon>mdi-rocket-launch-outline</v-icon>
+               </v-btn>
+
+               <v-btn 
+                 v-if="deal.status === 'open'"
+                 color="warning" 
+                 variant="outlined" 
+                 @click="showConvertLeadDialog = true"
+                 title="Convert to Lead"
+               >
+                 <v-icon>mdi-account-convert-outline</v-icon>
+               </v-btn>
+
+               <v-btn 
+                 color="info" 
+                 variant="outlined" 
+                 @click="showTicketConversionDialog = true"
+                 title="Convert to Ticket"
+               >
+                 <v-icon>mdi-ticket-outline</v-icon>
+               </v-btn>
+
+               <v-btn 
+                 color="purple" 
+                 variant="outlined" 
+                 @click="showConvertEngagementDialog = true"
+                 title="Convert to Engagement"
+               >
+                 <v-icon>mdi-handshake-outline</v-icon>
+               </v-btn>
+
+               <Link :href="route('crm.deals.edit', deal.id)" class="text-decoration-none">
+                 <v-btn variant="outlined" color="secondary" title="Edit Deal">
+                   <v-icon>mdi-pencil</v-icon>
+                 </v-btn>
                </Link>
-               <v-btn color="primary" :href="route('crm.deals.pipeline')">Update Stage</v-btn>
+               
+               <v-btn color="info" @click="showEngagementModal = true" title="Log Engagement">
+                 <v-icon>mdi-calendar-plus</v-icon>
+               </v-btn>
+               
+               <v-btn color="primary" :href="route('crm.deals.pipeline')" title="Update Stage">
+                 <v-icon>mdi-view-column</v-icon>
+               </v-btn>
             </v-col>
           </v-row>
         </v-card>
@@ -254,6 +356,107 @@ const deleteDeal = () => {
             @success="showEngagementModal = false"
           />
         </v-card-text>
+      </v-card>
+    </v-dialog>
+
+    <!-- Convert to Project Confirmation -->
+    <v-dialog v-model="showConvertDialog" max-width="500px">
+      <v-card>
+        <v-card-title class="pa-4 bg-success text-white">
+          Convert Deal to Project?
+        </v-card-title>
+        <v-card-text class="pa-4 pt-6">
+          <p class="text-body-1 mb-4">
+            This will mark the deal as <strong>Won</strong> and create a new project with the following details:
+          </p>
+          <v-list density="compact">
+            <v-list-item prepend-icon="mdi-format-title" title="Project Name" :subtitle="deal.title"></v-list-item>
+            <v-list-item prepend-icon="mdi-currency-usd" title="Budget" :subtitle="formatCurrency(deal.value)"></v-list-item>
+            <v-list-item v-if="deal.client" prepend-icon="mdi-office-building" title="Client" :subtitle="deal.client.name"></v-list-item>
+          </v-list>
+          <p class="text-caption text-medium-emphasis mt-4">
+            All activities and engagements associated with this deal will be migrated to the new project.
+          </p>
+        </v-card-text>
+        <v-card-actions class="pa-4">
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="showConvertDialog = false">Cancel</v-btn>
+          <v-btn color="success" variant="elevated" :loading="converting" @click="convertToProject">
+            Confirm & Convert
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Convert to Lead Confirmation -->
+    <v-dialog v-model="showConvertLeadDialog" max-width="500px">
+      <v-card>
+        <v-card-title class="pa-4 bg-warning text-white">
+          Convert Deal back to Lead?
+        </v-card-title>
+        <v-card-text class="pa-4 pt-6">
+          <p class="text-body-1 mb-4">
+            This will create a new Lead based on this deal's information. 
+          </p>
+          <v-alert type="info" variant="tonal" class="mb-4">
+            The deal will remain in the system, but a new lead will be created for further qualification.
+          </v-alert>
+        </v-card-text>
+        <v-card-actions class="pa-4">
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="showConvertLeadDialog = false">Cancel</v-btn>
+          <v-btn color="warning" variant="elevated" :loading="convertingToLead" @click="convertToLead">
+            Confirm & Convert
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Convert to Ticket Confirmation -->
+    <v-dialog v-model="showTicketConversionDialog" max-width="500px">
+      <v-card>
+        <v-card-title class="pa-4 bg-info text-white">
+          Create Support Ticket from Deal?
+        </v-card-title>
+        <v-card-text class="pa-4 pt-6">
+          <p class="text-body-1 mb-4">
+            This will create a support ticket related to this deal.
+          </p>
+          <v-alert type="info" variant="tonal" class="mb-4">
+            Useful for tracking technical issues or support requests during the sales process.
+          </v-alert>
+        </v-card-text>
+        <v-card-actions class="pa-4">
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="showTicketConversionDialog = false">Cancel</v-btn>
+          <v-btn color="info" variant="elevated" :loading="convertingToTicket" @click="convertToTicket">
+            Confirm & Create
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Convert to Engagement Confirmation -->
+    <v-dialog v-model="showConvertEngagementDialog" max-width="500px">
+      <v-card>
+        <v-card-title class="pa-4 bg-purple text-white">
+          Convert Deal to Engagement?
+        </v-card-title>
+        <v-card-text class="pa-4 pt-6">
+          <p class="text-body-1 mb-4">
+            This will create a new Engagement based on this deal's information. 
+          </p>
+          <v-alert type="info" variant="tonal" class="mb-4">
+            An engagement will be created to schedule a follow-up or meeting related to this deal.
+          </v-alert>
+        </v-card-text>
+        <v-card-actions class="pa-4">
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="showConvertEngagementDialog = false">Cancel</v-btn>
+          <v-btn color="purple" variant="elevated" :loading="convertingToEngagement" @click="convertToEngagement">
+            Confirm & Create
+          </v-btn>
+        </v-card-actions>
       </v-card>
     </v-dialog>
   </DashboardLayout>

@@ -35,11 +35,14 @@ export default defineConfig({
         },
     },
     server: {
+        host: 'localhost',
+        port: 5173,
         watch: {
             ignored: ['**/storage/framework/views/**'],
         },
     },
     optimizeDeps: {
+        include: ['vuetify'],
         esbuildOptions: {
             tsconfig: path.resolve(__dirname, 'tsconfig.json'),
         },

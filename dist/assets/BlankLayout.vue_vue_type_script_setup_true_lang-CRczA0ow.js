@@ -1,1 +1,0 @@
-import{L as e}from"./LoaderWrapper-CM7phn5N.js";import{d as o,o as r,c as t,aV as s,a as n,b as p,aW as c}from"./app-CajJQkEm.js";const u=o({__name:"BlankLayout",setup(l){return(a,_)=>(r(),t(s,null,{default:n(()=>[p(e),c(a.$slots,"default")]),_:3}))}});export{u as _};

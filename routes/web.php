@@ -11,6 +11,8 @@ use App\Http\Controllers\CRM\LeadController;
 use App\Http\Controllers\CRM\ProjectController;
 use App\Http\Controllers\CRM\TaskController;
 use App\Http\Controllers\CRM\InvoiceController;
+use App\Http\Controllers\CRM\TicketController;
+use App\Http\Controllers\CRM\PartnerController;
 use App\Http\Controllers\CRM\MarketingAutomationController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProfileController;
@@ -59,6 +61,10 @@ Route::middleware('auth')->group(function () {
     // CRM
     Route::prefix('crm')->group(function () {
         // Deals
+        Route::post('/deals/{deal}/convert', [DealController::class, 'convert'])->name('crm.deals.convert');
+        Route::post('/deals/{deal}/convert-to-lead', [DealController::class, 'convertToLead'])->name('crm.deals.convert-to-lead');
+        Route::post('/deals/{deal}/convert-to-ticket', [DealController::class, 'convertToTicket'])->name('crm.deals.convert-to-ticket');
+        Route::post('/deals/{deal}/convert-to-engagement', [DealController::class, 'convertToEngagement'])->name('crm.deals.convert-to-engagement');
         Route::get('/deals-pipeline', [DealController::class, 'pipeline'])->name('crm.deals.pipeline');
         Route::put('/deals/{deal}/stage', [DealController::class, 'updateStage'])->name('crm.deals.updateStage');
         Route::get('/deals-export', [DealController::class, 'export'])->name('crm.deals.export');
@@ -72,13 +78,20 @@ Route::middleware('auth')->group(function () {
         Route::resource('activities', ActivityController::class)->names('crm.activities');
 
         // Clients
-    Route::resource('clients', ClientController::class)->names('crm.clients');
+        Route::post('/clients/{client}/convert', [ClientController::class, 'convert'])->name('crm.clients.convert');
+        Route::post('/clients/{client}/convert-to-partner', [ClientController::class, 'convertToPartner'])->name('crm.clients.convert-to-partner');
+        Route::post('/clients/{client}/convert-to-ticket', [ClientController::class, 'convertToTicket'])->name('crm.clients.convert-to-ticket');
+        Route::resource('clients', ClientController::class)->names('crm.clients');
 
     // Contacts
+    Route::post('/contacts/{contact}/convert', [ContactController::class, 'convert'])->name('crm.contacts.convert');
+    Route::post('/contacts/{contact}/convert-to-ticket', [ContactController::class, 'convertToTicket'])->name('crm.contacts.convert-to-ticket');
     Route::resource('contacts', ContactController::class)->names('crm.contacts');
 
         // Leads
         Route::post('/leads/{lead}/convert', [LeadController::class, 'convert'])->name('crm.leads.convert');
+        Route::post('/leads/{lead}/convert-to-partner', [LeadController::class, 'convertToPartner'])->name('crm.leads.convert-to-partner');
+        Route::post('/leads/{lead}/convert-to-ticket', [LeadController::class, 'convertToTicket'])->name('crm.leads.convert-to-ticket');
         Route::resource('leads', LeadController::class)->names('crm.leads');
 
         // Projects
@@ -90,6 +103,17 @@ Route::middleware('auth')->group(function () {
         // Invoices
         Route::resource('invoices', InvoiceController::class)->names('crm.invoices');
 
+        // Tickets
+        Route::post('/tickets/{ticket}/convert-to-lead', [TicketController::class, 'convertToLead'])->name('crm.tickets.convert-to-lead');
+        Route::post('/tickets/{ticket}/convert-to-deal', [TicketController::class, 'convertToDeal'])->name('crm.tickets.convert-to-deal');
+        Route::post('/tickets/{ticket}/convert-to-contact', [TicketController::class, 'convertToContact'])->name('crm.tickets.convert-to-contact');
+        Route::resource('tickets', TicketController::class)->names('crm.tickets');
+
+        // Partners
+        Route::post('/partners/{partner}/convert-to-lead', [PartnerController::class, 'convertToLead'])->name('crm.partners.convert-to-lead');
+        Route::post('/partners/{partner}/convert-to-ticket', [PartnerController::class, 'convertToTicket'])->name('crm.partners.convert-to-ticket');
+        Route::resource('partners', PartnerController::class)->names('crm.partners');
+
         // Marketing Automations
         Route::resource('marketing-automations', MarketingAutomationController::class)->names('crm.marketing-automations');
 
@@ -97,6 +121,8 @@ Route::middleware('auth')->group(function () {
         Route::resource('communications', CommunicationController::class)->names('crm.communications');
 
         // Engagements
+        Route::post('/engagements/{engagement}/convert-to-deal', [EngagementController::class, 'convertToDeal'])->name('crm.engagements.convert-to-deal');
+        Route::post('/engagements/{engagement}/convert-to-ticket', [EngagementController::class, 'convertToTicket'])->name('crm.engagements.convert-to-ticket');
         Route::resource('engagements', EngagementController::class)->names('crm.engagements');
     });
 

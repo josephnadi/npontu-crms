@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import SvgSprite from '@/components/shared/SvgSprite.vue';
+import GlobalSearchOverlay from '@/components/search/GlobalSearchOverlay.vue';
 import { useCustomizerStore } from '../../../stores/customizer';
 
 // dropdown imports
@@ -14,6 +15,8 @@ watch(priority, (newPriority) => {
   // yes, console.log() is a side effect
   priority.value = newPriority;
 });
+
+const showGlobalSearch = ref(false);
 </script>
 
 <template>
@@ -65,7 +68,7 @@ watch(priority, (newPriority) => {
     <!-- Search part -->
     <!-- ---------------------------------------------- -->
     <v-sheet color="transparent" class="d-none d-lg-block" width="224">
-      <Searchbar />
+      <Searchbar @open-search="showGlobalSearch = true" />
     </v-sheet>
 
     <!---/Search part -->
@@ -108,4 +111,6 @@ watch(priority, (newPriority) => {
       </v-sheet>
     </v-menu>
   </v-app-bar>
+
+  <GlobalSearchOverlay v-model="showGlobalSearch" />
 </template>

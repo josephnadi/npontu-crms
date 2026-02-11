@@ -166,47 +166,43 @@ class LeadController extends Controller
         }
 
         try {
-            DB::beginTransaction();
-
-            // 1. Create Client
-            $client = Client::create([
-                'name' => $lead->full_name,
-                'email' => $lead->email,
-                'phone' => $lead->phone,
-                'company' => $lead->company_name,
-                'status' => 'active',
-                'owner_id' => $lead->owner_id,
-            ]);
-
-            $deal = null;
-            // 2. Create Deal if requested
-            if ($validated['create_deal']) {
-                $deal = Deal::create([
-                    'title' => $validated['deal_title'],
-                    'value' => $validated['deal_value'],
-                    'deal_stage_id' => $validated['deal_stage_id'],
-                    'client_id' => $client->id,
-                    'owner_id' => $lead->owner_id,
-                    'status' => 'open',
-                ]);
-            }
-
-            // 3. Update Lead
-            $lead->update([
-                'status' => 'converted',
-                'converted_to_client_id' => $client->id,
-                'converted_to_deal_id' => $deal?->id,
-                'converted_at' => now(),
-            ]);
-
-            DB::commit();
+            $client = $lead->convertToClient($validated);
 
             return redirect()->route('crm.clients.show', $client->id)
-                ->with('success', 'Lead successfully converted to client' . ($deal ? ' and deal created.' : '.'));
-
+                ->with('success', 'Lead successfully converted to client.');
         } catch (\Exception $e) {
-            DB::rollBack();
             return back()->with('error', 'Failed to convert lead: ' . $e->getMessage());
+        }
+    }
+
+    public function convertToPartner(Lead $lead)
+    {
+        $this->authorizeOwner($lead);
+
+        if ($lead->status === 'converted') {
+            return back()->with('error', 'Lead is already converted.');
+        }
+
+        try {
+            $partner = $lead->convertToPartner();
+
+            return redirect()->route('crm.partners.index')
+                ->with('success', 'Lead successfully converted to Partner.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to convert lead: ' . $e->getMessage());
+        }
+    }
+
+    public function convertToTicket(Lead $lead)
+    {
+        $this->authorizeOwner($lead);
+
+        try {
+            $ticket = $lead->convertToTicket();
+            return redirect()->route('crm.tickets.show', $ticket->id)
+                ->with('success', 'Lead successfully converted to Ticket.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to convert lead to ticket: ' . $e->getMessage());
         }
     }
 

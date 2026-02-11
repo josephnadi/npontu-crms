@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\Workflowable;
 
 class Project extends Model
 {
-    use SoftDeletes, Workflowable;
+    use HasFactory, SoftDeletes, Workflowable;
 
     protected $fillable = [
         'name',

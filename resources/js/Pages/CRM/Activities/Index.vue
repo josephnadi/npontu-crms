@@ -1,8 +1,9 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import DashboardLayout from '@/layouts/dashboard/DashboardLayout.vue';
 import SvgSprite from '@/components/shared/SvgSprite.vue';
+import debounce from 'lodash/debounce';
 
 const props = defineProps({
   activities: {
@@ -17,17 +18,26 @@ const search = ref(props.filters?.search || '');
 const typeFilter = ref(props.filters?.type || 'all');
 const statusFilter = ref(props.filters?.status || 'all');
 const selected = ref([]);
+const loading = ref(false);
 
 const applyFilters = () => {
+  loading.value = true;
   router.get(route('crm.activities.index'), {
     search: search.value,
     type: typeFilter.value,
     status: statusFilter.value
   }, {
     preserveState: true,
-    replace: true
+    replace: true,
+    preserveScroll: true,
+    onStart: () => loading.value = true,
+    onFinish: () => loading.value = false
   });
 };
+
+watch([search, typeFilter, statusFilter], debounce(() => {
+  applyFilters();
+}, 500));
 
 const markCompleted = (activity) => {
   router.put(route('crm.activities.complete', activity.id), {}, {
@@ -175,7 +185,6 @@ const getEntityName = (activity) => {
                   hide-details
                   variant="outlined"
                   density="comfortable"
-                  @keyup.enter="applyFilters"
                 ></v-text-field>
               </v-col>
               <v-col cols="12" md="2">
@@ -187,7 +196,6 @@ const getEntityName = (activity) => {
                   variant="outlined"
                   density="comfortable"
                   class="text-capitalize"
-                  @update:modelValue="applyFilters"
                 ></v-select>
               </v-col>
               <v-col cols="12" md="2">
@@ -199,7 +207,6 @@ const getEntityName = (activity) => {
                   variant="outlined"
                   density="comfortable"
                   class="text-capitalize"
-                  @update:modelValue="applyFilters"
                 ></v-select>
               </v-col>
               <v-col cols="12" md="4" class="d-flex justify-end gap-2">
@@ -276,28 +283,23 @@ const getEntityName = (activity) => {
                   </v-chip>
                 </td>
                 <td class="text-right">
-                  <v-menu>
-                    <template v-slot:activator="{ props }">
-                      <v-btn icon="mdi-dots-vertical" variant="text" size="small" v-bind="props"></v-btn>
-                    </template>
-                    <v-list size="small">
-                      <v-list-item @click="router.get(getEntityLink(activity))" prepend-icon="mdi-eye">
-                        <v-list-item-title>View Related</v-list-item-title>
-                      </v-list-item>
-                      <v-list-item 
-                        v-if="activity.status === 'pending'"
-                        @click="markCompleted(activity)" 
-                        prepend-icon="mdi-check"
-                        color="success"
-                      >
-                        <v-list-item-title>Mark Completed</v-list-item-title>
-                      </v-list-item>
-                      <v-divider></v-divider>
-                      <v-list-item @click="deleteActivity(activity.id)" prepend-icon="mdi-delete" color="error">
-                        <v-list-item-title>Delete</v-list-item-title>
-                      </v-list-item>
-                    </v-list>
-                  </v-menu>
+                  <div class="d-flex justify-end">
+                    <v-tooltip text="View Related">
+                      <template v-slot:activator="{ props }">
+                        <v-btn icon="mdi-eye" size="small" v-bind="props" @click="router.get(getEntityLink(activity))"></v-btn>
+                      </template>
+                    </v-tooltip>
+                    <v-tooltip v-if="activity.status === 'pending'" text="Mark Completed">
+                      <template v-slot:activator="{ props }">
+                        <v-btn icon="mdi-check" size="small" color="success" v-bind="props" @click="markCompleted(activity)"></v-btn>
+                      </template>
+                    </v-tooltip>
+                    <v-tooltip text="Delete Activity">
+                      <template v-slot:activator="{ props }">
+                        <v-btn icon="mdi-delete" size="small" color="error" v-bind="props" @click="deleteActivity(activity.id)"></v-btn>
+                      </template>
+                    </v-tooltip>
+                  </div>
                 </td>
               </tr>
               <tr v-if="activities.data.length === 0">

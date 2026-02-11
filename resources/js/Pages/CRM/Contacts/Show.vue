@@ -17,6 +17,34 @@ const tab = ref('activities');
 const showActivityModal = ref(false);
 const showInteractionModal = ref(false);
 const showEngagementModal = ref(false);
+const showConversionDialog = ref(false);
+const showTicketConversionDialog = ref(false);
+const converting = ref(false);
+const convertingToTicket = ref(false);
+
+const confirmConvertToLead = () => {
+  showConversionDialog.value = true;
+};
+
+const convertToLead = () => {
+  converting.value = true;
+  router.post(route('crm.contacts.convert', props.contact.id), {}, {
+    onFinish: () => {
+      converting.value = false;
+      showConversionDialog.value = false;
+    }
+  });
+};
+
+const convertToTicket = () => {
+  convertingToTicket.value = true;
+  router.post(route('crm.contacts.convert-to-ticket', props.contact.id), {}, {
+    onFinish: () => {
+      convertingToTicket.value = false;
+      showTicketConversionDialog.value = false;
+    }
+  });
+};
 </script>
 
 <template>
@@ -44,8 +72,28 @@ const showEngagementModal = ref(false);
           </div>
         </div>
         <div class="d-flex gap-2">
+          <v-btn
+            v-if="contact.owner_id === $page.props.auth.user.id"
+            variant="outlined"
+            color="warning"
+            @click="confirmConvertToLead"
+            title="Convert to Lead"
+          >
+            <v-icon>mdi-account-convert-outline</v-icon>
+          </v-btn>
+          <v-btn
+            v-if="contact.owner_id === $page.props.auth.user.id"
+            variant="outlined"
+            color="info"
+            @click="showTicketConversionDialog = true"
+            title="Convert to Ticket"
+          >
+            <v-icon>mdi-ticket-outline</v-icon>
+          </v-btn>
           <Link :href="route('crm.contacts.edit', contact.id)">
-            <v-btn variant="outlined" color="primary" prepend-icon="mdi-pencil">Edit Contact</v-btn>
+            <v-btn variant="outlined" color="primary" title="Edit Contact">
+              <v-icon>mdi-pencil</v-icon>
+            </v-btn>
           </Link>
         </div>
       </v-col>
@@ -300,6 +348,51 @@ const showEngagementModal = ref(false);
             @success="showEngagementModal = false"
           />
         </v-card-text>
+      </v-card>
+    </v-dialog>
+
+    <!-- Conversion Confirmation Dialog -->
+    <v-dialog v-model="showConversionDialog" max-width="500px">
+      <v-card>
+        <v-card-title class="pa-4 bg-warning text-white">
+          Convert Contact to Lead?
+        </v-card-title>
+        <v-card-text class="pa-4 pt-6">
+          This will move this contact and all its activities/engagements to a new lead record. The contact record will be archived.
+        </v-card-text>
+        <v-card-actions class="pa-4">
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="showConversionDialog = false">Cancel</v-btn>
+          <v-btn color="warning" variant="elevated" :loading="converting" @click="convertToLead">
+            Confirm Conversion
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Convert to Ticket Dialog -->
+    <v-dialog v-model="showTicketConversionDialog" max-width="500px">
+      <v-card>
+        <v-card-title class="pa-4 bg-info text-white d-flex justify-space-between align-center">
+          <span>Convert to Ticket</span>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="showTicketConversionDialog = false"></v-btn>
+        </v-card-title>
+        <v-card-text class="pa-6">
+          <div class="text-center mb-6">
+            <v-icon color="info" size="64" class="mb-4">mdi-ticket-outline</v-icon>
+            <h3 class="text-h5 mb-2">Create Support Ticket?</h3>
+            <p class="text-body-1 text-medium-emphasis">
+              This will create a support ticket for <strong>{{ contact.first_name }} {{ contact.last_name }}</strong>.
+            </p>
+          </div>
+        </v-card-text>
+        <v-card-actions class="pa-4 pt-0">
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="showTicketConversionDialog = false">Cancel</v-btn>
+          <v-btn color="info" :loading="convertingToTicket" @click="convertToTicket">
+            Confirm Ticket Creation
+          </v-btn>
+        </v-card-actions>
       </v-card>
     </v-dialog>
   </DashboardLayout>

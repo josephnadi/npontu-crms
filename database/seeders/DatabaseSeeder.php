@@ -13,13 +13,21 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::updateOrCreate(
+        $user = \App\Models\User::updateOrCreate(
             ['email' => 'pontian@npontu.com'],
             [
-                'name' => 'Pontian',
-                'password' => Hash::make('password12#'),
+                'name' => 'Pontian Admin',
+                'password' => \Illuminate\Support\Facades\Hash::make('password12#'),
                 'email_verified_at' => now(),
             ]
         );
+
+        // Seed Lookups
+        $this->call([
+            LeadSeeder::class,
+            DealSeeder::class,
+            WorkflowSeeder::class,
+            CRMFullSeeder::class,
+        ]);
     }
 }

@@ -1,32 +1,72 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch, PropType } from 'vue';
+import { debounce } from 'lodash';
 import { router } from '@inertiajs/vue3';
 import BaseBreadcrumb from '@/components/shared/BaseBreadcrumb.vue';
 import UiParentCard from '@/components/shared/UiParentCard.vue';
-import LeadConversionModal from '@/Components/CRM/LeadConversionModal.vue';
+import LeadConversionModal from '@/components/CRM/LeadConversionModal.vue';
+
+interface Lead {
+  id: number;
+  full_name: string;
+  email: string;
+  phone?: string;
+  company_name?: string;
+  lead_source?: {
+    id: number;
+    name: string;
+  };
+  score: number;
+  status: 'new' | 'contacted' | 'qualified' | 'converted' | 'lost';
+  notes?: string;
+}
+
+interface LeadSource {
+  id: number;
+  name: string;
+}
+
+interface LeadFilters {
+  search?: string;
+  status?: string;
+  lead_source_id?: number;
+}
+
+interface LeadStats {
+  total?: number;
+  new?: number;
+  qualified?: number;
+  converted?: number;
+}
+
+interface DealStage {
+  id: number;
+  name: string;
+}
+
+interface PaginatedLeads {
+  data: Lead[];
+  from: number;
+  to: number;
+  total: number;
+  current_page: number;
+  last_page: number;
+  // Add other pagination properties if needed
+}
 
 // Props from controller
-const props = defineProps({
-  leads: {
-    type: Object,
-    default: () => ({ data: [] })
-  },
-  leadSources: {
-    type: Array,
-    default: () => []
-  },
-  filters: {
-    type: Object,
-    default: () => ({})
-  },
-  stats: {
-    type: Object,
-    default: () => ({})
-  },
-  dealStages: {
-    type: Array,
-    default: () => []
-  }
+const props = withDefaults(defineProps<{
+  leads: PaginatedLeads;
+  leadSources: LeadSource[];
+  filters: LeadFilters;
+  stats: LeadStats;
+  dealStages: DealStage[];
+}>(), {
+  leads: () => ({ data: [], from: 0, to: 0, total: 0, current_page: 1, last_page: 1 }),
+  leadSources: () => [],
+  filters: () => ({}),
+  stats: () => ({}),
+  dealStages: () => []
 });
 
 // Page title and breadcrumbs
@@ -40,6 +80,7 @@ const breadcrumbs = ref([
 const search = ref(props.filters.search || '');
 const statusFilter = ref(props.filters.status || '');
 const sourceFilter = ref(props.filters.lead_source_id || '');
+const loading = ref(false);
 
 // Status options
 const statusOptions = [
@@ -65,13 +106,15 @@ const getStatusColor = (status: string) => {
 
 // Apply filters
 const applyFilters = () => {
+  loading.value = true;
   router.get(route('crm.leads.index'), {
     search: search.value,
     status: statusFilter.value,
     lead_source_id: sourceFilter.value
   }, {
     preserveState: true,
-    preserveScroll: true
+    preserveScroll: true,
+    onFinish: () => loading.value = false
   });
 };
 
@@ -90,21 +133,21 @@ const createLead = () => {
 
 // View modal state
 const showViewModal = ref(false);
-const selectedViewLead = ref(null);
+const selectedViewLead = ref<Lead | null>(null);
 
 // Open view modal
-const openViewModal = (lead) => {
+const openViewModal = (lead: Lead) => {
   selectedViewLead.value = lead;
   showViewModal.value = true;
 };
 
 // Navigate to edit page
-const editLead = (id) => {
-  router.visit(route('crm.leads.edit', id));
+const editLead = (id: number) => {
+  router.visit(route('crm.leads.edit', { id: id }));
 };
 
 // Delete lead
-const deleteLead = (id, name) => {
+const deleteLead = (id: number, name: string) => {
   if (confirm(`Are you sure you want to delete lead "${name}"?`)) {
     router.delete(route('crm.leads.destroy', id), {
       preserveScroll: true
@@ -117,7 +160,7 @@ const showConversionModal = ref(false);
 const selectedLead = ref(null);
 
 // Open conversion modal
-const openConversionModal = (lead) => {
+const openConversionModal = (lead: Lead) => {
   selectedLead.value = lead;
   showConversionModal.value = true;
 };
@@ -126,6 +169,20 @@ const openConversionModal = (lead) => {
 const handleConverted = () => {
   showConversionModal.value = false;
   selectedLead.value = null;
+};
+
+// Convert to Partner
+const convertToPartner = (id: number) => {
+  if (confirm('Convert this lead to a Partner?')) {
+    router.post(route('crm.leads.convert-to-partner', { id: id }));
+  }
+};
+
+// Convert to Ticket
+const convertToTicket = (id: number) => {
+  if (confirm('Create a support ticket for this lead?')) {
+    router.post(route('crm.leads.convert-to-ticket', { id: id }));
+  }
 };
 
 // Source filter options
@@ -141,6 +198,10 @@ const sourceOptions = computed(() => {
 
 // Safe access to leads data
 const leadsData = computed(() => props.leads?.data || []);
+
+watch([search, statusFilter, sourceFilter], debounce(() => {
+  applyFilters();
+}, 500));
 </script>
 
 <template>
@@ -306,24 +367,71 @@ const leadsData = computed(() => props.leads?.data || []);
                   {{ lead.status.charAt(0).toUpperCase() + lead.status.slice(1) }}
                 </v-chip>
               </td>
-              <td>
-                <div class="d-flex justify-center gap-1">
-                  <v-btn size="x-small" icon color="info" variant="text" @click="openViewModal(lead)">
-                    <v-icon size="small">mdi-eye</v-icon>
+              <td class="text-right">
+                <div class="d-flex justify-end gap-1">
+                  <!-- View Action -->
+                  <v-btn size="small" icon variant="text" @click="openViewModal(lead)" title="Quick View">
+                    <v-icon color="info">mdi-eye</v-icon>
                   </v-btn>
-                  <v-btn size="x-small" icon color="primary" variant="text" @click="editLead(lead.id)">
-                    <v-icon size="small">mdi-pencil</v-icon>
-                  </v-btn>
-                  <v-btn 
-                    v-if="lead.status === 'qualified'" 
-                    size="x-small" icon color="success" variant="text" 
-                    @click="openConversionModal(lead)"
-                    title="Convert to Client"
-                  >
-                    <v-icon size="small">mdi-account-convert</v-icon>
-                  </v-btn>
-                  <v-btn size="x-small" icon color="error" variant="text" @click="deleteLead(lead.id, lead.full_name)">
-                    <v-icon size="small">mdi-delete</v-icon>
+
+                  <!-- Edit Action with Menu -->
+                  <v-menu>
+                    <template v-slot:activator="{ props }">
+                      <v-btn size="small" icon variant="text" v-bind="props" title="Edit & Actions">
+                        <v-icon color="primary">mdi-pencil</v-icon>
+                      </v-btn>
+                    </template>
+                    <v-list density="compact">
+                      <v-list-item @click="editLead(lead.id)" value="edit">
+                        <template v-slot:prepend>
+                          <v-icon size="small" class="mr-2">mdi-pencil</v-icon>
+                        </template>
+                        <v-list-item-title>Edit Lead</v-list-item-title>
+                      </v-list-item>
+
+                      <Link :href="route('crm.leads.show', lead.id)" class="text-decoration-none text-high-emphasis">
+                        <v-list-item value="details">
+                          <template v-slot:prepend>
+                            <v-icon size="small" class="mr-2">mdi-file-document-outline</v-icon>
+                          </template>
+                          <v-list-item-title>Full Details</v-list-item-title>
+                        </v-list-item>
+                      </Link>
+
+                      <v-list-item 
+                        v-if="lead.status === 'qualified'" 
+                        @click="openConversionModal(lead)"
+                        value="convert-client"
+                      >
+                        <template v-slot:prepend>
+                          <v-icon size="small" class="mr-2">mdi-account-convert</v-icon>
+                        </template>
+                        <v-list-item-title>Convert to Client</v-list-item-title>
+                      </v-list-item>
+
+                      <v-list-item 
+                        v-if="lead.status !== 'converted'"
+                        @click="convertToPartner(lead.id)"
+                        value="convert-partner"
+                      >
+                        <template v-slot:prepend>
+                          <v-icon size="small" class="mr-2">mdi-handshake-outline</v-icon>
+                        </template>
+                        <v-list-item-title>Convert to Partner</v-list-item-title>
+                      </v-list-item>
+
+                      <v-list-item @click="convertToTicket(lead.id)" value="convert-ticket">
+                        <template v-slot:prepend>
+                          <v-icon size="small" class="mr-2">mdi-ticket-outline</v-icon>
+                        </template>
+                        <v-list-item-title>Convert to Ticket</v-list-item-title>
+                      </v-list-item>
+                    </v-list>
+                  </v-menu>
+
+                  <!-- Delete Action -->
+                  <v-btn size="small" icon variant="text" @click="deleteLead(lead.id, lead.full_name)" title="Delete">
+                    <v-icon color="error">mdi-delete</v-icon>
                   </v-btn>
                 </div>
               </td>

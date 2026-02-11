@@ -1,9 +1,9 @@
-<script setup lang="ts">
+<script setup>
 import { ref, computed } from 'vue';
 import { router } from '@inertiajs/vue3';
 import BaseBreadcrumb from '@/components/shared/BaseBreadcrumb.vue';
 import UiParentCard from '@/components/shared/UiParentCard.vue';
-import LeadConversionModal from '@/Components/CRM/LeadConversionModal.vue';
+import LeadConversionModal from '@/components/CRM/LeadConversionModal.vue';
 import ActivityTimeline from '@/components/CRM/ActivityTimeline.vue';
 import EngagementTimeline from '@/components/CRM/EngagementTimeline.vue';
 import EngagementForm from '@/components/CRM/EngagementForm.vue';
@@ -28,9 +28,13 @@ const breadcrumbs = ref([
 
 const showConversionModal = ref(false);
 const showEngagementModal = ref(false);
+const showPartnerConversionDialog = ref(false);
+const showTicketConversionDialog = ref(false);
+const convertingToPartner = ref(false);
+const convertingToTicket = ref(false);
 
-const getStatusColor = (status: string) => {
-  const colors: Record<string, string> = {
+const getStatusColor = (status) => {
+  const colors = {
     new: 'info',
     contacted: 'warning',
     qualified: 'purple',
@@ -48,6 +52,26 @@ const handleConverted = () => {
   showConversionModal.value = false;
   // Redirect happens from backend
 };
+
+const convertToPartner = () => {
+  convertingToPartner.value = true;
+  router.post(route('crm.leads.convert-to-partner', props.lead.id), {}, {
+    onFinish: () => {
+      convertingToPartner.value = false;
+      showPartnerConversionDialog.value = false;
+    }
+  });
+};
+
+const convertToTicket = () => {
+  convertingToTicket.value = true;
+  router.post(route('crm.leads.convert-to-ticket', props.lead.id), {}, {
+    onFinish: () => {
+      convertingToTicket.value = false;
+      showTicketConversionDialog.value = false;
+    }
+  });
+};
 </script>
 
 <template>
@@ -60,7 +84,7 @@ const handleConverted = () => {
           <div class="d-flex align-center justify-space-between mb-6">
             <div class="d-flex align-center">
               <v-avatar size="64" color="lightprimary" class="mr-4">
-                <span class="text-h4 text-primary">{{ lead.first_name[0] }}{{ lead.last_name[0] }}</span>
+                <span class="text-h4 text-primary">{{ (lead.first_name || 'L')[0] }}{{ (lead.last_name || 'E')[0] }}</span>
               </v-avatar>
               <div>
                 <h2 class="text-h4 font-weight-bold mb-1">{{ lead.full_name }}</h2>
@@ -68,17 +92,41 @@ const handleConverted = () => {
               </div>
             </div>
             <div class="d-flex gap-2">
-              <v-btn color="primary" variant="outlined" @click="editLead">
-                <v-icon left class="mr-1">mdi-pencil</v-icon>
-                Edit
+              <v-btn color="primary" variant="outlined" @click="editLead" title="Edit Lead">
+                <v-icon>mdi-pencil</v-icon>
               </v-btn>
               <v-btn 
                 v-if="lead.status === 'qualified'" 
                 color="success" 
                 @click="showConversionModal = true"
+                title="Convert to Client"
               >
-                <v-icon left class="mr-1">mdi-account-convert</v-icon>
-                Convert to Client
+                <v-icon>mdi-account-convert</v-icon>
+              </v-btn>
+              <v-btn 
+                v-if="lead.status !== 'converted'" 
+                color="warning" 
+                variant="outlined"
+                @click="showPartnerConversionDialog = true"
+                title="Convert to Partner"
+              >
+                <v-icon>mdi-handshake-outline</v-icon>
+              </v-btn>
+              <v-btn 
+                color="info" 
+                variant="outlined"
+                @click="showTicketConversionDialog = true"
+                title="Convert to Ticket"
+              >
+                <v-icon>mdi-ticket-outline</v-icon>
+              </v-btn>
+              <v-btn 
+                color="info" 
+                variant="tonal"
+                @click="showEngagementModal = true"
+                title="Log Engagement"
+              >
+                <v-icon>mdi-calendar-plus</v-icon>
               </v-btn>
             </div>
           </div>
@@ -231,6 +279,63 @@ const handleConverted = () => {
           @success="showEngagementModal = false"
         />
       </v-card-text>
+    </v-card>
+  </v-dialog>
+
+  <!-- Convert to Partner Dialog -->
+  <v-dialog v-model="showPartnerConversionDialog" max-width="500px">
+    <v-card>
+      <v-card-title class="pa-4 bg-warning text-white d-flex justify-space-between align-center">
+        <span>Convert to Partner</span>
+        <v-btn icon="mdi-close" variant="text" size="small" @click="showPartnerConversionDialog = false"></v-btn>
+      </v-card-title>
+      <v-card-text class="pa-6">
+        <div class="text-center mb-6">
+          <v-icon color="warning" size="64" class="mb-4">mdi-handshake-outline</v-icon>
+          <h3 class="text-h5 mb-2">Are you sure?</h3>
+          <p class="text-body-1 text-medium-emphasis">
+            This will convert <strong>{{ lead.full_name }}</strong> into a Partner. 
+            The lead status will be updated to "converted".
+          </p>
+        </div>
+        <v-alert type="info" variant="tonal" class="mb-6">
+          A new Partner record will be created using the lead's company and contact information.
+        </v-alert>
+      </v-card-text>
+      <v-card-actions class="pa-4 pt-0">
+        <v-spacer></v-spacer>
+        <v-btn variant="text" @click="showPartnerConversionDialog = false">Cancel</v-btn>
+        <v-btn color="warning" :loading="convertingToPartner" @click="convertToPartner">
+          Confirm Conversion
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <!-- Convert to Ticket Dialog -->
+  <v-dialog v-model="showTicketConversionDialog" max-width="500px">
+    <v-card>
+      <v-card-title class="pa-4 bg-info text-white d-flex justify-space-between align-center">
+        <span>Convert to Ticket</span>
+        <v-btn icon="mdi-close" variant="text" size="small" @click="showTicketConversionDialog = false"></v-btn>
+      </v-card-title>
+      <v-card-text class="pa-6">
+        <div class="text-center mb-6">
+          <v-icon color="info" size="64" class="mb-4">mdi-ticket-outline</v-icon>
+          <h3 class="text-h5 mb-2">Create Support Ticket?</h3>
+          <p class="text-body-1 text-medium-emphasis">
+            This will create a support ticket for <strong>{{ lead.full_name }}</strong>. 
+            Useful for tracking inquiries or issues before conversion.
+          </p>
+        </div>
+      </v-card-text>
+      <v-card-actions class="pa-4 pt-0">
+        <v-spacer></v-spacer>
+        <v-btn variant="text" @click="showTicketConversionDialog = false">Cancel</v-btn>
+        <v-btn color="info" :loading="convertingToTicket" @click="convertToTicket">
+          Confirm Ticket Creation
+        </v-btn>
+      </v-card-actions>
     </v-card>
   </v-dialog>
 </template>

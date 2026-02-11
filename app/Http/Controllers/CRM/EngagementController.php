@@ -96,4 +96,30 @@ class EngagementController extends Controller
         
         return redirect()->back()->with('success', 'Engagement deleted successfully');
     }
+
+    public function convertToDeal(Engagement $engagement)
+    {
+        try {
+            $deal = $engagement->convertToDeal();
+            if ($deal === null) {
+                return back()->with('error', 'Failed to convert engagement to deal. Deal creation failed.');
+            }
+            return redirect()->route('crm.deals.show', $deal->id)->with('success', 'Engagement converted to Deal successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to convert engagement: ' . $e->getMessage());
+        }
+    }
+
+    public function convertToTicket(Engagement $engagement)
+    {
+        try {
+            $ticket = $engagement->convertToTicket();
+            if ($ticket === null) {
+                return back()->with('error', 'Failed to convert engagement to ticket. Ticket creation failed.');
+            }
+            return redirect()->route('crm.tickets.show', $ticket->id)->with('success', 'Engagement converted to Ticket successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to convert engagement: ' . $e->getMessage());
+        }
+    }
 }

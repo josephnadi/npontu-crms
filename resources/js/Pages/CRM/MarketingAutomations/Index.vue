@@ -220,18 +220,26 @@ watch([search, typeFilter, statusFilter], debounce(() => {
                   <td class="text-right">
                     <v-menu>
                       <template v-slot:activator="{ props }">
-                        <v-btn icon="mdi-dots-vertical" variant="text" size="small" v-bind="props"></v-btn>
+                        <v-btn icon="mdi-pencil" size="small" v-bind="props"></v-btn>
                       </template>
-                      <v-list density="compact">
-                        <v-list-item :to="route('crm.marketing-automations.show', automation.id)" prepend-icon="mdi-eye">
-                          <v-list-item-title>View</v-list-item-title>
+                      <v-list>
+                        <v-list-item :to="route('crm.marketing-automations.show', automation.id)">
+                          <template v-slot:prepend>
+                            <v-icon>mdi-eye</v-icon>
+                          </template>
+                          <v-list-item-title>View Details</v-list-item-title>
                         </v-list-item>
-                        <v-list-item :to="route('crm.marketing-automations.edit', automation.id)" prepend-icon="mdi-pencil">
-                          <v-list-item-title>Edit</v-list-item-title>
+                        <v-list-item :to="route('crm.marketing-automations.edit', automation.id)">
+                          <template v-slot:prepend>
+                            <v-icon>mdi-pencil</v-icon>
+                          </template>
+                          <v-list-item-title>Edit Automation</v-list-item-title>
                         </v-list-item>
-                        <v-divider></v-divider>
-                        <v-list-item @click="deleteAutomation(automation.id)" prepend-icon="mdi-delete" color="error">
-                          <v-list-item-title>Delete</v-list-item-title>
+                        <v-list-item @click="deleteAutomation(automation.id)">
+                          <template v-slot:prepend>
+                            <v-icon>mdi-delete</v-icon>
+                          </template>
+                          <v-list-item-title>Delete Automation</v-list-item-title>
                         </v-list-item>
                       </v-list>
                     </v-menu>

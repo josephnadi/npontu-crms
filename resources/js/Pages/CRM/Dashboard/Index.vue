@@ -362,31 +362,43 @@ const getColor = (type) => {
 
               <template v-slot:append>
                 <div class="d-flex align-center">
-                  <div class="text-right mr-3">
-                    <div class="text-caption font-weight-medium">{{ formatDate(activity.created_at) }}</div>
-                    <v-chip size="x-small" :color="activity.status === 'completed' ? 'success' : 'warning'" variant="flat" class="mt-1">
-                      {{ activity.status }}
-                    </v-chip>
+                    <div class="text-right mr-3">
+                      <div class="text-caption font-weight-medium">{{ formatDate(activity.created_at) }}</div>
+                      <v-chip size="x-small" :color="activity.status === 'completed' ? 'success' : 'warning'" variant="flat" class="mt-1">
+                        {{ activity.status }}
+                      </v-chip>
+                    </div>
+                    <v-menu>
+                      <template v-slot:activator="{ props }">
+                        <v-btn
+                          color="primary"
+                          icon
+                          flat
+                          size="small"
+                          v-bind="props"
+                        >
+                          <v-icon>mdi-pencil</v-icon>
+                        </v-btn>
+                      </template>
+                      <v-list>
+                        <v-list-item
+                          v-if="activity.status === 'pending'"
+                          @click="router.put(route('crm.activities.update', activity.id), { ...activity, status: 'completed' })"
+                        >
+                          <template v-slot:prepend>
+                            <v-icon size="small">mdi-check</v-icon>
+                          </template>
+                          <v-list-item-title>Mark Completed</v-list-item-title>
+                        </v-list-item>
+                        <v-list-item @click="router.delete(route('crm.activities.destroy', activity.id))">
+                          <template v-slot:prepend>
+                            <v-icon size="small">mdi-delete</v-icon>
+                          </template>
+                          <v-list-item-title>Delete Activity</v-list-item-title>
+                        </v-list-item>
+                      </v-list>
+                    </v-menu>
                   </div>
-                  <v-menu>
-                    <template v-slot:activator="{ props }">
-                      <v-btn icon="mdi-dots-vertical" variant="text" size="small" v-bind="props"></v-btn>
-                    </template>
-                    <v-list size="small">
-                      <v-list-item 
-                        v-if="activity.status === 'pending'"
-                        @click="router.put(route('crm.activities.update', activity.id), { ...activity, status: 'completed' })" 
-                        prepend-icon="mdi-check"
-                        color="success"
-                      >
-                        <v-list-item-title>Mark Completed</v-list-item-title>
-                      </v-list-item>
-                      <v-list-item @click="router.delete(route('crm.activities.destroy', activity.id))" prepend-icon="mdi-delete" color="error">
-                        <v-list-item-title>Delete</v-list-item-title>
-                      </v-list-item>
-                    </v-list>
-                  </v-menu>
-                </div>
               </template>
             </v-list-item>
             

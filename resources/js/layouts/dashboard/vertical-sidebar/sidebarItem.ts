@@ -68,6 +68,16 @@ const sidebarItem: menu[] = [
     to: '/crm/invoices'
   },
   {
+    title: 'Tickets',
+    icon: 'custom-support',
+    to: '/crm/tickets'
+  },
+  {
+    title: 'Partners',
+    icon: 'custom-user-square',
+    to: '/crm/partners'
+  },
+  {
     title: 'Marketing Automation',
     icon: 'custom-message-2',
     to: '/crm/marketing-automations'

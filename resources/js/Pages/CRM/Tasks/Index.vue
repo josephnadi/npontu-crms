@@ -241,23 +241,27 @@ watch([search, statusFilter, priorityFilter], debounce(() => {
                     </span>
                   </td>
                   <td class="text-right">
-                    <v-menu>
-                      <template v-slot:activator="{ props }">
-                        <v-btn icon="mdi-dots-vertical" variant="text" size="small" v-bind="props"></v-btn>
-                      </template>
-                      <v-list density="compact">
-                        <v-list-item :to="route('crm.tasks.show', task.id)" prepend-icon="mdi-eye">
-                          <v-list-item-title>View</v-list-item-title>
-                        </v-list-item>
-                        <v-list-item :to="route('crm.tasks.edit', task.id)" prepend-icon="mdi-pencil">
-                          <v-list-item-title>Edit</v-list-item-title>
-                        </v-list-item>
-                        <v-divider></v-divider>
-                        <v-list-item @click="deleteTask(task.id)" prepend-icon="mdi-delete" color="error">
-                          <v-list-item-title>Delete</v-list-item-title>
-                        </v-list-item>
-                      </v-list>
-                    </v-menu>
+                    <div class="d-flex justify-end">
+                      <v-tooltip text="View Task">
+                        <template v-slot:activator="{ props }">
+                          <Link :href="route('crm.tasks.show', task.id)">
+                            <v-btn icon="mdi-eye" variant="text" size="small" v-bind="props"></v-btn>
+                          </Link>
+                        </template>
+                      </v-tooltip>
+                      <v-tooltip text="Edit Task">
+                        <template v-slot:activator="{ props }">
+                          <Link :href="route('crm.tasks.edit', task.id)">
+                            <v-btn icon="mdi-pencil" variant="text" size="small" v-bind="props"></v-btn>
+                          </Link>
+                        </template>
+                      </v-tooltip>
+                      <v-tooltip text="Delete Task">
+                        <template v-slot:activator="{ props }">
+                          <v-btn icon="mdi-delete" variant="text" size="small" color="error" v-bind="props" @click="deleteTask(task.id)"></v-btn>
+                        </template>
+                      </v-tooltip>
+                    </div>
                   </td>
                 </tr>
               </tbody>
@@ -269,7 +273,7 @@ watch([search, statusFilter, priorityFilter], debounce(() => {
               <v-pagination
                 v-model="tasks.current_page"
                 :length="tasks.last_page"
-                @update:modelValue="router.get(route('crm.tasks.index', { page: $event }))"
+                @update:modelValue="router.get(route('crm.tasks.index'), { page: $event, search: search, status: statusFilter, priority: priorityFilter }, { preserveState: true, preserveScroll: true, replace: true })"
                 total-visible="7"
                 rounded="circle"
               ></v-pagination>
