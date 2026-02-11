@@ -16,12 +16,13 @@
     font-weight: 700;
     letter-spacing: 1px;
     padding-top: 20px;
+    padding-bottom: 8px;
     opacity: 0.9;
   }
 
   .v-list-item {
     color: rgb(var(--v-theme-lightText)) !important;
-    margin: 4px 12px !important;
+    margin: 6px 12px !important;
     border-radius: 12px !important;
     transition: all 0.3s ease;
     
@@ -172,7 +173,9 @@
   .v-list-item {
     border-radius: 8px;
     padding-inline-start: calc(20px + var(--indent-padding) / 2) !important;
-    margin-bottom: 2px;
+    margin-bottom: 4px;
+  }
+  .leftSidebar .scrollnavbar .v-list-item {
     .v-list-item__prepend {
       margin-inline-end: 13px;
     }
