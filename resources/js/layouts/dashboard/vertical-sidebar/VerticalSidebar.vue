@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { shallowRef } from 'vue';
+import { shallowRef, ref } from 'vue';
 import { useCustomizerStore } from '../../../stores/customizer';
 import sidebarItems from './sidebarItem';
 
@@ -8,9 +8,11 @@ import NavItem from './NavItem/NavItem.vue';
 import NavCollapse from './NavCollapse/NavCollapse.vue';
 import ExtraBox from './extrabox/ExtraBox.vue';
 import Logo from '../logo/LogoMain.vue';
+import AIChatWidget from '../../../components/ai/AIChatWidget.vue';
 
 const customizer = useCustomizerStore();
 const sidebarMenu = shallowRef(sidebarItems);
+const isChatOpen = ref(false);
 </script>
 
 <template>
@@ -31,6 +33,22 @@ const sidebarMenu = shallowRef(sidebarItems);
     <div class="pa-5">
       <Logo />
     </div>
+    <div class="pa-4">
+      <v-btn
+        color="primary"
+        block
+        class="mt-2"
+        @click="isChatOpen = !isChatOpen"
+      >
+        <v-icon left>mdi-robot</v-icon>
+        AI Assistant
+      </v-btn>
+    </div>
+
+    <transition name="slide-fade">
+      <AIChatWidget v-model="isChatOpen" v-if="isChatOpen" />
+    </transition>
+
     <!-- ---------------------------------------------- -->
     <!---Navigation -->
     <!-- ---------------------------------------------- -->
@@ -55,3 +73,16 @@ const sidebarMenu = shallowRef(sidebarItems);
     </perfect-scrollbar>
   </v-navigation-drawer>
 </template>
+
+<style scoped>
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all 0.3s ease-out;
+}
+
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateX(20px);
+  opacity: 0;
+}
+</style>

@@ -45,6 +45,9 @@ Route::middleware('guest')->group(function () {
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+    // AI Chat Route
+    Route::post('/ai/chat', [\App\Http\Controllers\AI\AIChatController::class, 'handleChat'])->name('ai.chat');
+
     // Main dashboard at /dashboard (and / for convenience)
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/', fn () => redirect()->route('dashboard'));

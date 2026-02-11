@@ -3,6 +3,11 @@ import { ref, watch } from 'vue';
 import SvgSprite from '@/components/shared/SvgSprite.vue';
 import GlobalSearchOverlay from '@/components/search/GlobalSearchOverlay.vue';
 import { useCustomizerStore } from '../../../stores/customizer';
+import { usePage } from '@inertiajs/vue3';
+
+const page = usePage();
+const user = page.props.auth?.user;
+console.log('User object in VerticalHeader:', user);
 
 // dropdown imports
 import NotificationDD from './NotificationDD.vue';
@@ -102,7 +107,7 @@ const showGlobalSearch = ref(false);
       <template v-slot:activator="{ props }">
         <v-btn class="profileBtn me-0" aria-label="profile" variant="text" rounded="circle" icon v-bind="props">
           <v-avatar class="py-2" size="40" rounded="circle">
-            <img src="@/assets/images/users/avatar-6.png" class="rounded-circle" alt="profile" />
+            <img :src="user?.avatar ? '/storage/' + user.avatar + '?' + new Date().getTime() : '/src/assets/images/users/avatar-6.png'" class="rounded-circle" alt="profile" />
           </v-avatar>
         </v-btn>
       </template>
