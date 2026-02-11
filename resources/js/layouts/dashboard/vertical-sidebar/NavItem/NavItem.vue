@@ -26,7 +26,7 @@ const isExternal = computed(() => props.item.getURL || props.item.type === 'exte
   <Link
     v-if="isInternal"
     :href="linkHref"
-    class="v-list-item v-list-item--rounded mb-1 d-flex align-center"
+    class="v-list-item v-list-item--rounded mb-2 d-flex align-center"
     :class="{ 'v-list-item--disabled': item.disabled }"
   >
     <div class="v-list-item__prepend me-3">
@@ -58,7 +58,7 @@ const isExternal = computed(() => props.item.getURL || props.item.type === 'exte
     :href="linkHref"
     :target="'_blank'"
     rounded
-    class="mb-1"
+    class="mb-2"
     :disabled="item.disabled"
   >
     <template v-slot:prepend>

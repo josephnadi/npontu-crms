@@ -6,7 +6,7 @@ import avatarGroup from '@/assets/images/welcome-banner.png';
 </script>
 
 <template>
-  <v-sheet rounded="md" color="rgba(255, 255, 255, 0.05)" class="pa-4 ExtraBox hide-menu text-center pb-6" border style="border-color: rgba(255, 255, 255, 0.15) !important;">
+  <v-sheet rounded="md" color="rgba(255, 255, 255, 0.05)" class="pa-3 ExtraBox hide-menu text-center pb-3" border style="border-color: rgba(255, 255, 255, 0.15) !important;">
     <div class="d-flex align-center flex-column">
       <v-img :src="avatarGroup" alt="book" class="mb-3" width="169px" cover></v-img>
       <div class="px-3">
