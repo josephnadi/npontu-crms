@@ -15,7 +15,7 @@ const props = defineProps({ user: Object });
           <v-card-text class="pa-4">
             <div class="mb-4">
               <v-avatar size="96">
-                <img :src="props.user.avatar ? '/storage/' + props.user.avatar : '/src/assets/images/users/avatar-6.png'" width="96" alt="avatar" />
+                <img :src="props.user.avatar ? '/storage/' + props.user.avatar + '?' + new Date().getTime() : '/src/assets/images/users/avatar-6.png'" width="96" alt="avatar" />
               </v-avatar>
             </div>
             <div class="mb-3"><span class="text-subtitle-2">Name:</span> {{ user.name }}</div>

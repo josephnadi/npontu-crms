@@ -24,7 +24,7 @@ const submit = () => form.post(route('profile.update'));
             <form @submit.prevent="submit">
               <div class="d-flex align-center mb-4">
                 <v-avatar size="64" class="me-4">
-                  <img :src="props.user.avatar ? '/storage/' + props.user.avatar : '/src/assets/images/users/avatar-6.png'" width="64" alt="avatar" />
+                  <img :src="props.user.avatar ? '/storage/' + props.user.avatar + '?' + new Date().getTime() : '/src/assets/images/users/avatar-6.png'" width="64" alt="avatar" />
                 </v-avatar>
                 <v-file-input
                   v-model="form.avatar"
