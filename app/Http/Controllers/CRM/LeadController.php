@@ -3,198 +3,213 @@
 namespace App\Http\Controllers\CRM;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\CRM\StoreLeadRequest;
+use App\Http\Requests\CRM\UpdateLeadRequest;
 use App\Models\Lead;
-use App\Models\Contact;
+use App\Models\LeadSource;
 use App\Models\Client;
 use App\Models\Deal;
 use App\Models\DealStage;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class LeadController extends Controller
 {
+    /**
+     * Display a listing of the resource.
+     */
     public function index(Request $request)
     {
-        $leads = Lead::with('owner')
-            ->when($request->search, function ($query, $search) {
-                $query->where('first_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('company_name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%");
-            })
-            ->when($request->status, function ($query, $status) {
-                $query->where('status', $status);
-            })
-            ->when($request->source, function ($query, $source) {
-                $query->where('source', $source);
-            })
-            ->orderBy('created_at', 'desc')
-            ->paginate(10)
+        $query = Lead::with(['leadSource', 'owner'])
+            ->where('owner_id', Auth::id());
+
+        // Apply filters
+        if ($request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('first_name', 'like', "%{$request->search}%")
+                  ->orWhere('last_name', 'like', "%{$request->search}%")
+                  ->orWhere('email', 'like', "%{$request->search}%")
+                  ->orWhere('company_name', 'like', "%{$request->search}%");
+            });
+        }
+
+        if ($request->status) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->lead_source_id) {
+            $query->where('lead_source_id', $request->lead_source_id);
+        }
+
+        $leads = $query->orderBy('created_at', 'desc')
+            ->paginate(12)
             ->withQueryString();
+
+        // Calculate stats
+        $stats = [
+            'total' => Lead::where('owner_id', Auth::id())->count(),
+            'new' => Lead::where('owner_id', Auth::id())->where('status', 'new')->count(),
+            'qualified' => Lead::where('owner_id', Auth::id())->where('status', 'qualified')->count(),
+            'converted' => Lead::where('owner_id', Auth::id())->where('status', 'converted')->count(),
+        ];
 
         return Inertia::render('CRM/Leads/Index', [
             'leads' => $leads,
-            'filters' => $request->only(['search', 'status', 'source']),
-            'dealStages' => DealStage::orderBy('order_column')->get(),
+            'leadSources' => LeadSource::where('is_active', true)->orderBy('name')->get(),
+            'filters' => $request->only(['search', 'status', 'lead_source_id']),
+            'stats' => $stats,
         ]);
     }
 
+    /**
+     * Show the form for creating a new resource.
+     */
     public function create()
     {
         return Inertia::render('CRM/Leads/Create', [
-            'users' => User::select('id', 'first_name', 'last_name')->get(),
+            'leadSources' => LeadSource::where('is_active', true)->orderBy('name')->get(),
+            'users' => User::select('id', 'name')->orderBy('name')->get(),
         ]);
     }
 
-    public function store(Request $request)
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(StoreLeadRequest $request)
     {
-        $validated = $request->validate([
-            'first_name' => 'required|string|max:100',
-            'last_name' => 'required|string|max:100',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:50',
-            'company_name' => 'nullable|string|max:255',
-            'job_title' => 'nullable|string|max:100',
-            'source' => 'nullable|string|max:100',
-            'status' => 'required|string|in:new,contacted,qualified,converted,lost',
-            'score' => 'nullable|integer|min:0|max:100',
-            'notes' => 'nullable|string',
-            'owner_id' => 'required|exists:users,id',
-        ]);
+        $validated = $request->validated();
+        $validated['owner_id'] = $validated['owner_id'] ?? Auth::id();
+        $validated['created_by'] = Auth::id();
 
-        Lead::create($validated);
+        $lead = Lead::create($validated);
 
         return redirect()->route('crm.leads.index')->with('success', 'Lead created successfully.');
     }
 
+    /**
+     * Display the specified resource.
+     */
     public function show(Lead $lead)
     {
-        $lead->load(['owner', 'activities' => function($query) {
-            $query->orderBy('activity_date', 'desc')->with('owner');
+        $this->authorizeOwner($lead);
+        $lead->load(['leadSource', 'owner', 'creator', 'activities' => function($q) {
+            $q->orderBy('activity_date', 'desc')->with('owner');
+        }, 'engagements' => function($q) {
+            $q->orderBy('engagement_date', 'desc')->with('user');
         }]);
+
         return Inertia::render('CRM/Leads/Show', [
             'lead' => $lead,
             'dealStages' => DealStage::orderBy('order_column')->get(),
         ]);
     }
 
+    /**
+     * Show the form for editing the specified resource.
+     */
     public function edit(Lead $lead)
     {
+        $this->authorizeOwner($lead);
+
         return Inertia::render('CRM/Leads/Edit', [
             'lead' => $lead,
-            'users' => User::select('id', 'first_name', 'last_name')->get(),
+            'leadSources' => LeadSource::where('is_active', true)->orderBy('name')->get(),
+            'users' => User::select('id', 'name')->orderBy('name')->get(),
         ]);
     }
 
-    public function update(Request $request, Lead $lead)
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(UpdateLeadRequest $request, Lead $lead)
     {
-        if ($lead->owner_id !== auth()->id()) {
-            abort(403);
-        }
-        $validated = $request->validate([
-            'first_name' => 'required|string|max:100',
-            'last_name' => 'required|string|max:100',
-            'email' => 'nullable|email|max:255',
-            'phone' => 'nullable|string|max:50',
-            'company_name' => 'nullable|string|max:255',
-            'job_title' => 'nullable|string|max:100',
-            'source' => 'nullable|string|max:100',
-            'status' => 'required|string|in:new,contacted,qualified,converted,lost',
-            'score' => 'nullable|integer|min:0|max:100',
-            'notes' => 'nullable|string',
-            'owner_id' => 'required|exists:users,id',
-        ]);
+        $this->authorizeOwner($lead);
+        
+        $validated = $request->validated();
+        $validated['updated_by'] = Auth::id();
 
         $lead->update($validated);
 
         return redirect()->route('crm.leads.index')->with('success', 'Lead updated successfully.');
     }
 
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(Lead $lead)
+    {
+        $this->authorizeOwner($lead);
+        $lead->delete();
+
+        return redirect()->route('crm.leads.index')->with('success', 'Lead deleted successfully.');
+    }
+
+    /**
+     * Convert lead to client and optionally create a deal.
+     */
     public function convert(Request $request, Lead $lead)
     {
-        if ($lead->owner_id !== auth()->id()) {
-            abort(403);
-        }
-        if ($lead->status === 'converted') {
-            return redirect()->back()->with('error', 'This lead has already been converted.');
-        }
+        $this->authorizeOwner($lead);
 
-        $request->validate([
-            'create_client' => 'boolean',
-            'create_deal' => 'boolean',
+        $validated = $request->validate([
+            'create_deal' => 'required|boolean',
             'deal_title' => 'required_if:create_deal,true|nullable|string|max:255',
             'deal_value' => 'required_if:create_deal,true|nullable|numeric|min:0',
             'deal_stage_id' => 'required_if:create_deal,true|nullable|exists:deal_stages,id',
         ]);
 
+        if ($lead->status === 'converted') {
+            return back()->with('error', 'Lead is already converted.');
+        }
+
         try {
-            return DB::transaction(function () use ($request, $lead) {
-                // 1. Create or Find Client
-                $clientId = null;
-                if ($request->create_client && $lead->company_name) {
-                    // Try to find existing client by name or create new
-                    $client = Client::firstOrCreate(
-                        ['name' => $lead->company_name],
-                        ['owner_id' => auth()->id()]
-                    );
-                    $clientId = $client->id;
-                }
+            $client = $lead->convertToClient($validated);
 
-                // 2. Create Contact
-                $contact = Contact::create([
-                    'first_name' => $lead->first_name,
-                    'last_name' => $lead->last_name,
-                    'email' => $lead->email,
-                    'phone' => $lead->phone,
-                    'job_title' => $lead->job_title,
-                    'client_id' => $clientId,
-                    'owner_id' => auth()->id(),
-                    'notes' => $lead->notes,
-                    'status' => 'active',
-                ]);
-
-                // 3. Create Deal
-                if ($request->create_deal) {
-                    $stage = DealStage::find($request->deal_stage_id);
-                    Deal::create([
-                        'title' => $request->deal_title,
-                        'value' => $request->deal_value,
-                        'currency' => 'GHS',
-                        'deal_stage_id' => $request->deal_stage_id,
-                        'contact_id' => $contact->id,
-                        'client_id' => $clientId,
-                        'owner_id' => auth()->id(),
-                        'probability' => $stage->probability ?? 0,
-                    ]);
-                }
-
-                // 4. Migrate Activities
-                $lead->activities()->update([
-                    'activityable_id' => $contact->id,
-                    'activityable_type' => Contact::class,
-                ]);
-
-                // 5. Update Lead Status
-                $lead->update(['status' => 'converted']);
-
-                Log::info('Lead converted', ['lead_id' => $lead->id, 'user_id' => auth()->id()]);
-                return redirect()->route('crm.contacts.index')->with('success', 'Lead converted to contact successfully.');
-            });
+            return redirect()->route('crm.clients.show', $client->id)
+                ->with('success', 'Lead successfully converted to client.');
         } catch (\Exception $e) {
-            Log::error('Lead conversion failed', ['lead_id' => $lead->id, 'error' => $e->getMessage()]);
-            return redirect()->back()->with('error', 'Failed to convert lead: ' . $e->getMessage());
+            return back()->with('error', 'Failed to convert lead: ' . $e->getMessage());
         }
     }
 
-    public function destroy(Lead $lead)
+    public function convertToPartner(Lead $lead)
     {
-        if ($lead->owner_id !== auth()->id()) {
+        $this->authorizeOwner($lead);
+
+        if ($lead->status === 'converted') {
+            return back()->with('error', 'Lead is already converted.');
+        }
+
+        try {
+            $partner = $lead->convertToPartner();
+
+            return redirect()->route('crm.partners.index')
+                ->with('success', 'Lead successfully converted to Partner.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to convert lead: ' . $e->getMessage());
+        }
+    }
+
+    public function convertToTicket(Lead $lead)
+    {
+        $this->authorizeOwner($lead);
+
+        try {
+            $ticket = $lead->convertToTicket();
+            return redirect()->route('crm.tickets.show', $ticket->id)
+                ->with('success', 'Lead successfully converted to Ticket.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to convert lead to ticket: ' . $e->getMessage());
+        }
+    }
+
+    protected function authorizeOwner(Lead $lead)
+    {
+        if ($lead->owner_id !== Auth::id()) {
             abort(403);
         }
-        $lead->delete();
-        return redirect()->route('crm.leads.index')->with('success', 'Lead deleted successfully.');
     }
 }

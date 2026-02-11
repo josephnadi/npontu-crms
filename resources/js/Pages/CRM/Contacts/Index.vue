@@ -13,6 +13,9 @@ const props = defineProps({
 const search = ref(props.filters.search || '');
 const clientIdFilter = ref(props.filters.client_id || '');
 const loading = ref(false);
+const showConversionDialog = ref(false);
+const converting = ref(false);
+const selectedContact = ref(null);
 
 watch([search, clientIdFilter], debounce(() => {
   loading.value = true;
@@ -22,13 +25,38 @@ watch([search, clientIdFilter], debounce(() => {
   }, {
     preserveState: true,
     replace: true,
+    preserveScroll: true,
+    onStart: () => loading.value = true,
     onFinish: () => loading.value = false
   });
-}, 300));
+}, 500));
 
 const deleteContact = (id) => {
   if (confirm('Are you sure you want to delete this contact?')) {
     router.delete(route('crm.contacts.destroy', id));
+  }
+};
+
+const confirmConvertToLead = (contact) => {
+  selectedContact.value = contact;
+  showConversionDialog.value = true;
+};
+
+const convertToLead = () => {
+  if (!selectedContact.value) return;
+  converting.value = true;
+  router.post(route('crm.contacts.convert', selectedContact.value.id), {}, {
+    onFinish: () => {
+      converting.value = false;
+      showConversionDialog.value = false;
+      selectedContact.value = null;
+    }
+  });
+};
+
+const convertToTicket = (id) => {
+  if (confirm('Create a support ticket for this contact?')) {
+    router.post(route('crm.contacts.convert-to-ticket', id));
   }
 };
 </script>
@@ -118,23 +146,47 @@ const deleteContact = (id) => {
                   </v-chip>
                 </td>
                 <td class="text-right">
-                  <v-menu>
-                    <template v-slot:activator="{ props }">
-                      <v-btn icon="mdi-dots-vertical" variant="text" size="small" v-bind="props"></v-btn>
-                    </template>
-                    <v-list size="small">
-                      <v-list-item @click="router.get(route('crm.contacts.show', contact.id))" prepend-icon="mdi-eye">
-                        <v-list-item-title>View Details</v-list-item-title>
-                      </v-list-item>
-                      <v-list-item @click="router.get(route('crm.contacts.edit', contact.id))" prepend-icon="mdi-pencil">
-                        <v-list-item-title>Edit</v-list-item-title>
-                      </v-list-item>
-                      <v-divider></v-divider>
-                      <v-list-item @click="deleteContact(contact.id)" prepend-icon="mdi-delete" color="error">
-                        <v-list-item-title>Delete</v-list-item-title>
-                      </v-list-item>
-                    </v-list>
-                  </v-menu>
+                  <div class="d-flex justify-end gap-1">
+                    <Link :href="route('crm.contacts.show', contact.id)" class="text-decoration-none">
+                      <v-tooltip text="View Details">
+                        <template v-slot:activator="{ props }">
+                          <v-btn size="x-small" icon color="info" v-bind="props">
+                            <v-icon size="small">mdi-eye</v-icon>
+                          </v-btn>
+                        </template>
+                      </v-tooltip>
+                    </Link>
+                    <Link :href="route('crm.contacts.edit', contact.id)" class="text-decoration-none">
+                      <v-tooltip text="Edit">
+                        <template v-slot:activator="{ props }">
+                          <v-btn size="x-small" icon color="primary" v-bind="props">
+                            <v-icon size="small">mdi-pencil</v-icon>
+                          </v-btn>
+                        </template>
+                      </v-tooltip>
+                    </Link>
+                    <v-tooltip text="Convert to Lead">
+                      <template v-slot:activator="{ props }">
+                        <v-btn size="x-small" icon color="warning" @click="confirmConvertToLead(contact)" v-bind="props">
+                          <v-icon size="small">mdi-account-convert-outline</v-icon>
+                        </v-btn>
+                      </template>
+                    </v-tooltip>
+                    <v-tooltip text="Convert to Ticket">
+                      <template v-slot:activator="{ props }">
+                        <v-btn size="x-small" icon color="info" @click="convertToTicket(contact.id)" v-bind="props">
+                          <v-icon size="small">mdi-ticket-outline</v-icon>
+                        </v-btn>
+                      </template>
+                    </v-tooltip>
+                    <v-tooltip text="Delete">
+                      <template v-slot:activator="{ props }">
+                        <v-btn size="x-small" icon color="error" @click="deleteContact(contact.id)" v-bind="props">
+                          <v-icon size="small">mdi-delete</v-icon>
+                        </v-btn>
+                      </template>
+                    </v-tooltip>
+                  </div>
                 </td>
               </tr>
               <tr v-if="contacts.data.length === 0">
@@ -158,5 +210,24 @@ const deleteContact = (id) => {
         </v-card>
       </v-col>
     </v-row>
+
+    <!-- Conversion Confirmation Dialog -->
+    <v-dialog v-model="showConversionDialog" max-width="500px">
+      <v-card v-if="selectedContact">
+        <v-card-title class="pa-4 bg-warning text-white">
+          Convert {{ selectedContact.first_name }} {{ selectedContact.last_name }} to Lead?
+        </v-card-title>
+        <v-card-text class="pa-4 pt-6">
+          This will archive the contact and create a new lead from its information. Activities and engagements will be migrated to the new lead.
+        </v-card-text>
+        <v-card-actions class="pa-4">
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="showConversionDialog = false">Cancel</v-btn>
+          <v-btn color="warning" variant="elevated" :loading="converting" @click="convertToLead">
+            Confirm Conversion
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </DashboardLayout>
 </template>

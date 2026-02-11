@@ -4,6 +4,8 @@ import DashboardLayout from '@/layouts/dashboard/DashboardLayout.vue';
 import { ref } from 'vue';
 import ActivityTimeline from '@/components/CRM/ActivityTimeline.vue';
 import ActivityForm from '@/components/CRM/ActivityForm.vue';
+import EngagementTimeline from '@/components/CRM/EngagementTimeline.vue';
+import EngagementForm from '@/components/CRM/EngagementForm.vue';
 
 const props = defineProps({
   client: Object,
@@ -11,6 +13,47 @@ const props = defineProps({
 
 const tab = ref('contacts');
 const showActivityModal = ref(false);
+const showEngagementModal = ref(false);
+const showConversionDialog = ref(false);
+const showPartnerConversionDialog = ref(false);
+const showTicketConversionDialog = ref(false);
+const converting = ref(false);
+const convertingToPartner = ref(false);
+const convertingToTicket = ref(false);
+
+const confirmConvertToLead = () => {
+  showConversionDialog.value = true;
+};
+
+const convertToLead = () => {
+  converting.value = true;
+  router.post(route('crm.clients.convert', props.client.id), {}, {
+    onFinish: () => {
+      converting.value = false;
+      showConversionDialog.value = false;
+    }
+  });
+};
+
+const convertToPartner = () => {
+  convertingToPartner.value = true;
+  router.post(route('crm.clients.convert-to-partner', props.client.id), {}, {
+    onFinish: () => {
+      convertingToPartner.value = false;
+      showPartnerConversionDialog.value = false;
+    }
+  });
+};
+
+const convertToTicket = () => {
+  convertingToTicket.value = true;
+  router.post(route('crm.clients.convert-to-ticket', props.client.id), {}, {
+    onFinish: () => {
+      convertingToTicket.value = false;
+      showTicketConversionDialog.value = false;
+    }
+  });
+};
 </script>
 
 <template>
@@ -38,9 +81,41 @@ const showActivityModal = ref(false);
           </div>
         </div>
         <div class="d-flex gap-2">
+          <v-btn
+            v-if="client.owner_id === $page.props.auth.user.id"
+            variant="outlined"
+            color="warning"
+            @click="confirmConvertToLead"
+            title="Convert to Lead"
+          >
+            <v-icon>mdi-account-convert-outline</v-icon>
+          </v-btn>
+          <v-btn
+            v-if="client.owner_id === $page.props.auth.user.id"
+            variant="outlined"
+            color="secondary"
+            @click="showPartnerConversionDialog = true"
+            title="Convert to Partner"
+          >
+            <v-icon>mdi-handshake-outline</v-icon>
+          </v-btn>
+          <v-btn
+            v-if="client.owner_id === $page.props.auth.user.id"
+            variant="outlined"
+            color="info"
+            @click="showTicketConversionDialog = true"
+            title="Convert to Ticket"
+          >
+            <v-icon>mdi-ticket-outline</v-icon>
+          </v-btn>
           <Link :href="route('crm.clients.edit', client.id)">
-            <v-btn variant="outlined" color="primary" prepend-icon="mdi-pencil">Edit Client</v-btn>
+            <v-btn variant="outlined" color="primary" title="Edit Client">
+              <v-icon>mdi-pencil</v-icon>
+            </v-btn>
           </Link>
+          <v-btn color="info" @click="showEngagementModal = true" title="Log Engagement">
+            <v-icon>mdi-calendar-plus</v-icon>
+          </v-btn>
         </div>
       </v-col>
 
@@ -101,6 +176,7 @@ const showActivityModal = ref(false);
           <v-tab value="contacts">Contacts ({{ client.contacts?.length || 0 }})</v-tab>
           <v-tab value="deals">Deals ({{ client.deals?.length || 0 }})</v-tab>
           <v-tab value="activities">Activities</v-tab>
+          <v-tab value="engagements">Engagements</v-tab>
         </v-tabs>
         
         <v-window v-model="tab" class="mt-4">
@@ -233,6 +309,39 @@ const showActivityModal = ref(false);
               </v-card-text>
             </v-card>
           </v-window-item>
+
+          <v-window-item value="engagements">
+            <v-card elevation="0" border>
+              <v-card-item title="Engagement Timeline">
+                <template v-slot:append>
+                  <div class="d-flex gap-2">
+                    <v-btn
+                      color="warning"
+                      size="small"
+                      variant="flat"
+                      prepend-icon="mdi-star-plus-outline"
+                      @click="showEngagementModal = true"
+                    >
+                      Log Engagement
+                    </v-btn>
+                    <v-btn
+                      color="secondary"
+                      size="small"
+                      variant="text"
+                      prepend-icon="mdi-star-outline"
+                      @click="router.get(route('crm.engagements.index'))"
+                    >
+                      View All
+                    </v-btn>
+                  </div>
+                </template>
+              </v-card-item>
+              <v-divider></v-divider>
+              <v-card-text class="pa-4">
+                <EngagementTimeline :engagements="client.engagements" />
+              </v-card-text>
+            </v-card>
+          </v-window-item>
         </v-window>
       </v-col>
     </v-row>
@@ -251,6 +360,98 @@ const showActivityModal = ref(false);
             @success="showActivityModal = false"
           />
         </v-card-text>
+      </v-card>
+    </v-dialog>
+
+    <!-- Log Engagement Modal -->
+    <v-dialog v-model="showEngagementModal" max-width="700px">
+      <v-card>
+        <v-card-title class="pa-4 bg-warning text-white d-flex justify-space-between align-center">
+          <span>Log Engagement for {{ client.name }}</span>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="showEngagementModal = false"></v-btn>
+        </v-card-title>
+        <v-card-text class="pa-4 pt-6">
+          <EngagementForm 
+            engageable-type="App\Models\Client" 
+            :engageable-id="client.id"
+            @success="showEngagementModal = false"
+          />
+        </v-card-text>
+      </v-card>
+    </v-dialog>
+
+    <!-- Conversion Confirmation Dialog -->
+    <v-dialog v-model="showConversionDialog" max-width="500px">
+      <v-card>
+        <v-card-title class="pa-4 bg-warning text-white">
+          Convert Client to Lead?
+        </v-card-title>
+        <v-card-text class="pa-4 pt-6">
+          This will archive the client and its contacts, and create a new lead from the primary contact information. Activities and engagements will be migrated to the new lead.
+        </v-card-text>
+        <v-card-actions class="pa-4">
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="showConversionDialog = false">Cancel</v-btn>
+          <v-btn color="warning" variant="elevated" :loading="converting" @click="convertToLead">
+            Confirm Conversion
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Convert to Partner Dialog -->
+    <v-dialog v-model="showPartnerConversionDialog" max-width="500px">
+      <v-card>
+        <v-card-title class="pa-4 bg-secondary text-white d-flex justify-space-between align-center">
+          <span>Convert to Partner</span>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="showPartnerConversionDialog = false"></v-btn>
+        </v-card-title>
+        <v-card-text class="pa-6">
+          <div class="text-center mb-6">
+            <v-icon color="secondary" size="64" class="mb-4">mdi-handshake-outline</v-icon>
+            <h3 class="text-h5 mb-2">Are you sure?</h3>
+            <p class="text-body-1 text-medium-emphasis">
+              This will convert <strong>{{ client.name }}</strong> into a Partner. 
+              The client record will remain, but a new Partner profile will be created.
+            </p>
+          </div>
+          <v-alert type="info" variant="tonal" class="mb-6">
+            The new Partner will use the client's information.
+          </v-alert>
+        </v-card-text>
+        <v-card-actions class="pa-4 pt-0">
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="showPartnerConversionDialog = false">Cancel</v-btn>
+          <v-btn color="secondary" :loading="convertingToPartner" @click="convertToPartner">
+            Confirm Conversion
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Convert to Ticket Dialog -->
+    <v-dialog v-model="showTicketConversionDialog" max-width="500px">
+      <v-card>
+        <v-card-title class="pa-4 bg-info text-white d-flex justify-space-between align-center">
+          <span>Convert to Ticket</span>
+          <v-btn icon="mdi-close" variant="text" size="small" @click="showTicketConversionDialog = false"></v-btn>
+        </v-card-title>
+        <v-card-text class="pa-6">
+          <div class="text-center mb-6">
+            <v-icon color="info" size="64" class="mb-4">mdi-ticket-outline</v-icon>
+            <h3 class="text-h5 mb-2">Create Support Ticket?</h3>
+            <p class="text-body-1 text-medium-emphasis">
+              This will create a support ticket for <strong>{{ client.name }}</strong>.
+            </p>
+          </div>
+        </v-card-text>
+        <v-card-actions class="pa-4 pt-0">
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="showTicketConversionDialog = false">Cancel</v-btn>
+          <v-btn color="info" :loading="convertingToTicket" @click="convertToTicket">
+            Confirm Ticket Creation
+          </v-btn>
+        </v-card-actions>
       </v-card>
     </v-dialog>
   </DashboardLayout>

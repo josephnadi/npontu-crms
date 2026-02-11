@@ -2,9 +2,15 @@
 
 namespace App\Providers;
 
+use App\Models\Lead;
+use App\Models\Task;
+use App\Models\Engagement;
+use App\Observers\LeadObserver;
+use App\Observers\TaskObserver;
+use App\Observers\EngagementObserver;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Auth;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +27,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Lead::observe(LeadObserver::class);
+        Task::observe(TaskObserver::class);
+        Engagement::observe(EngagementObserver::class);
+        
         Inertia::share([
             'auth' => function () {
                 $user = Auth::user();

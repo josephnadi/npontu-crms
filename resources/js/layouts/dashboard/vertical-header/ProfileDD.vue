@@ -42,7 +42,7 @@ const profiledata2 = ref([
   <div>
     <div class="d-flex align-center pa-5">
       <v-avatar size="40" class="me-2">
-        <img :src="user?.avatar ? '/storage/' + user.avatar : '/src/assets/images/users/avatar-6.png'" width="40" alt="profile" />
+        <img :src="user?.avatar ? '/storage/' + user.avatar + '?' + new Date().getTime() : '/src/assets/images/users/avatar-6.png'" width="40" alt="profile" />
       </v-avatar>
       <div>
         <h6 class="text-subtitle-1 mb-0">{{ user?.name || 'User' }}</h6>

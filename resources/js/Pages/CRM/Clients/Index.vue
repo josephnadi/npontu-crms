@@ -4,23 +4,61 @@ import DashboardLayout from '@/layouts/dashboard/DashboardLayout.vue';
 import { ref, watch } from 'vue';
 import { debounce } from 'lodash';
 
+
+
 const props = defineProps({
   clients: Object,
   filters: Object,
 });
 
-const search = ref(props.filters.search);
+const search = ref(props.filters.search || '');
+const loading = ref(false);
+const showConversionDialog = ref(false);
+const converting = ref(false);
+const selectedClient = ref(null);
 
 watch(search, debounce((value) => {
   router.get(route('crm.clients.index'), { search: value }, {
     preserveState: true,
     replace: true,
+    preserveScroll: true,
+    onStart: () => loading.value = true,
+    onFinish: () => loading.value = false
   });
-}, 300));
+}, 500));
 
 const deleteClient = (id) => {
   if (confirm('Are you sure you want to delete this client?')) {
     router.delete(route('crm.clients.destroy', id));
+  }
+};
+
+const confirmConvertToLead = (client) => {
+  selectedClient.value = client;
+  showConversionDialog.value = true;
+};
+
+const convertToLead = () => {
+  if (!selectedClient.value) return;
+  converting.value = true;
+  router.post(route('crm.clients.convert', selectedClient.value.id), {}, {
+    onFinish: () => {
+      converting.value = false;
+      showConversionDialog.value = false;
+      selectedClient.value = null;
+    }
+  });
+};
+
+const convertToPartner = (id) => {
+  if (confirm('Convert this client to a Partner?')) {
+    router.post(route('crm.clients.convert-to-partner', id));
+  }
+};
+
+const convertToTicket = (id) => {
+  if (confirm('Create a support ticket for this client?')) {
+    router.post(route('crm.clients.convert-to-ticket', id));
   }
 };
 </script>
@@ -89,23 +127,54 @@ const deleteClient = (id) => {
                 </td>
                 <td>{{ client.phone || 'N/A' }}</td>
                 <td class="text-right">
-                  <v-menu>
-                    <template v-slot:activator="{ props }">
-                      <v-btn icon="mdi-dots-vertical" variant="text" size="small" v-bind="props"></v-btn>
-                    </template>
-                    <v-list size="small">
-                      <v-list-item @click="router.get(route('crm.clients.show', client.id))" prepend-icon="mdi-eye">
-                        <v-list-item-title>View</v-list-item-title>
-                      </v-list-item>
-                      <v-list-item @click="router.get(route('crm.clients.edit', client.id))" prepend-icon="mdi-pencil">
-                        <v-list-item-title>Edit</v-list-item-title>
-                      </v-list-item>
-                      <v-divider></v-divider>
-                      <v-list-item @click="deleteClient(client.id)" prepend-icon="mdi-delete" color="error">
-                        <v-list-item-title>Delete</v-list-item-title>
-                      </v-list-item>
-                    </v-list>
-                  </v-menu>
+                  <div class="d-flex justify-end gap-1">
+                    <Link :href="route('crm.clients.show', client.id)" class="text-decoration-none">
+                      <v-tooltip text="View Details">
+                        <template v-slot:activator="{ props }">
+                          <v-btn size="x-small" icon color="info" v-bind="props">
+                            <v-icon size="small">mdi-eye</v-icon>
+                          </v-btn>
+                        </template>
+                      </v-tooltip>
+                    </Link>
+                    <Link :href="route('crm.clients.edit', client.id)" class="text-decoration-none">
+                      <v-tooltip text="Edit">
+                        <template v-slot:activator="{ props }">
+                          <v-btn size="x-small" icon color="primary" v-bind="props">
+                            <v-icon size="small">mdi-pencil</v-icon>
+                          </v-btn>
+                        </template>
+                      </v-tooltip>
+                    </Link>
+                    <v-tooltip text="Convert to Lead">
+                      <template v-slot:activator="{ props }">
+                        <v-btn size="x-small" icon color="warning" @click="confirmConvertToLead(client)" v-bind="props">
+                          <v-icon size="small">mdi-account-convert-outline</v-icon>
+                        </v-btn>
+                      </template>
+                    </v-tooltip>
+                    <v-tooltip text="Convert to Partner">
+                      <template v-slot:activator="{ props }">
+                        <v-btn size="x-small" icon color="primary" @click="convertToPartner(client.id)" v-bind="props">
+                          <v-icon size="small">mdi-handshake-outline</v-icon>
+                        </v-btn>
+                      </template>
+                    </v-tooltip>
+                    <v-tooltip text="Convert to Ticket">
+                      <template v-slot:activator="{ props }">
+                        <v-btn size="x-small" icon color="info" @click="convertToTicket(client.id)" v-bind="props">
+                          <v-icon size="small">mdi-ticket-outline</v-icon>
+                        </v-btn>
+                      </template>
+                    </v-tooltip>
+                    <v-tooltip text="Delete">
+                      <template v-slot:activator="{ props }">
+                        <v-btn size="x-small" icon color="error" @click="deleteClient(client.id)" v-bind="props">
+                          <v-icon size="small">mdi-delete</v-icon>
+                        </v-btn>
+                      </template>
+                    </v-tooltip>
+                  </div>
                 </td>
               </tr>
               <tr v-if="clients.data.length === 0">
@@ -129,5 +198,24 @@ const deleteClient = (id) => {
         </v-card>
       </v-col>
     </v-row>
+
+    <!-- Conversion Confirmation Dialog -->
+    <v-dialog v-model="showConversionDialog" max-width="500px">
+      <v-card v-if="selectedClient">
+        <v-card-title class="pa-4 bg-warning text-white">
+          Convert {{ selectedClient.name }} to Lead?
+        </v-card-title>
+        <v-card-text class="pa-4 pt-6">
+          This will archive the client and its contacts, and create a new lead from the primary contact information. Activities and engagements will be migrated to the new lead.
+        </v-card-text>
+        <v-card-actions class="pa-4">
+          <v-spacer></v-spacer>
+          <v-btn variant="text" @click="showConversionDialog = false">Cancel</v-btn>
+          <v-btn color="warning" variant="elevated" :loading="converting" @click="convertToLead">
+            Confirm Conversion
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </DashboardLayout>
 </template>

@@ -2,6 +2,8 @@
 import { Head, Link, router } from '@inertiajs/vue3';
 import DashboardLayout from '@/layouts/dashboard/DashboardLayout.vue';
 import SvgSprite from '@/components/shared/SvgSprite.vue';
+import { ref, watch } from 'vue';
+import { debounce } from 'lodash';
 
 const props = defineProps({
   deals: {
@@ -12,25 +14,29 @@ const props = defineProps({
   stages: Array,
 });
 
-const search = $ref(props.filters?.search || '');
-const stageId = $ref(props.filters?.stage_id || '');
-const status = $ref(props.filters?.status || '');
+const search = ref(props.filters?.search || '');
+const stageId = ref(props.filters?.stage_id || '');
+const status = ref(props.filters?.status || '');
+const loading = ref(false);
 
 const applyFilters = () => {
+  loading.value = true;
   router.get(route('crm.deals.index'), {
-    search,
-    stage_id: stageId,
-    status
+    search: search.value,
+    stage_id: stageId.value,
+    status: status.value
   }, {
     preserveState: true,
-    replace: true
+    replace: true,
+    preserveScroll: true,
+    onFinish: () => loading.value = false
   });
 };
 
 const clearFilters = () => {
-  search = '';
-  stageId = '';
-  status = '';
+  search.value = '';
+  stageId.value = '';
+  status.value = '';
   applyFilters();
 };
 
@@ -51,6 +57,28 @@ const deleteDeal = (id) => {
     router.delete(window.route('crm.deals.destroy', id));
   }
 };
+
+const convertToProject = (id) => {
+  if (confirm('Convert this won deal to a Project?')) {
+    router.post(route('crm.deals.convert', id));
+  }
+};
+
+const convertToLead = (id) => {
+  if (confirm('Convert this deal back to a Lead?')) {
+    router.post(route('crm.deals.convert-to-lead', id));
+  }
+};
+
+const convertToTicket = (id) => {
+  if (confirm('Create a support ticket for this deal?')) {
+    router.post(route('crm.deals.convert-to-ticket', id));
+  }
+};
+
+watch([search, stageId, status], debounce(() => {
+  applyFilters();
+}, 500));
 </script>
 
 <template>
@@ -180,31 +208,54 @@ const deleteDeal = (id) => {
                 </td>
                 <td>{{ formatDate(deal.expected_close_date) }}</td>
                 <td class="text-right">
+                <td class="text-right">
                   <v-menu>
                     <template v-slot:activator="{ props }">
-                      <v-btn icon="mdi-dots-vertical" variant="text" size="small" v-bind="props"></v-btn>
+                      <v-btn icon="mdi-pencil" size="small" v-bind="props"></v-btn>
                     </template>
-                    <v-list size="small">
-                      <v-list-item @click="router.get(route('crm.deals.show', deal.id))">
+                    <v-list>
+                      <v-list-item :to="route('crm.deals.show', deal.id)">
                         <template v-slot:prepend>
-                          <v-icon icon="mdi-eye-outline"></v-icon>
+                          <v-icon>mdi-eye</v-icon>
                         </template>
                         <v-list-item-title>View Details</v-list-item-title>
                       </v-list-item>
-                      <v-list-item @click="router.get(route('crm.deals.edit', deal.id))">
+                      <v-list-item :to="route('crm.deals.edit', deal.id)">
                         <template v-slot:prepend>
-                          <v-icon icon="mdi-pencil-outline"></v-icon>
+                          <v-icon>mdi-pencil</v-icon>
                         </template>
-                        <v-list-item-title>Edit</v-list-item-title>
+                        <v-list-item-title>Edit Deal</v-list-item-title>
                       </v-list-item>
-                      <v-list-item @click="deleteDeal(deal.id)" base-color="error">
+                      <v-list-item
+                        v-if="deal.status !== 'won'"
+                        @click="convertToProject(deal.id)"
+                      >
                         <template v-slot:prepend>
-                          <v-icon icon="mdi-delete-outline"></v-icon>
+                          <v-icon>mdi-briefcase-check-outline</v-icon>
                         </template>
-                        <v-list-item-title>Delete</v-list-item-title>
+                        <v-list-item-title>Convert to Project</v-list-item-title>
+                      </v-list-item>
+                      <v-list-item @click="convertToLead(deal.id)">
+                        <template v-slot:prepend>
+                          <v-icon>mdi-account-convert-outline</v-icon>
+                        </template>
+                        <v-list-item-title>Convert to Lead</v-list-item-title>
+                      </v-list-item>
+                      <v-list-item @click="convertToTicket(deal.id)">
+                        <template v-slot:prepend>
+                          <v-icon>mdi-ticket-outline</v-icon>
+                        </template>
+                        <v-list-item-title>Convert to Ticket</v-list-item-title>
+                      </v-list-item>
+                      <v-list-item @click="deleteDeal(deal.id)">
+                        <template v-slot:prepend>
+                          <v-icon>mdi-delete</v-icon>
+                        </template>
+                        <v-list-item-title>Delete Deal</v-list-item-title>
                       </v-list-item>
                     </v-list>
                   </v-menu>
+                </td>
                 </td>
               </tr>
               <tr v-if="deals.data.length === 0">

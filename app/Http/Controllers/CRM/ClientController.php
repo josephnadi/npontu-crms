@@ -60,10 +60,12 @@ class ClientController extends Controller
     {
         $client->load(['contacts', 'owner', 'deals.stage', 'activities' => function($query) {
             $query->orderBy('activity_date', 'desc')->with('owner');
+        }, 'engagements' => function($query) {
+            $query->orderBy('engagement_date', 'desc')->with('user');
         }]);
         
         return Inertia::render('CRM/Clients/Show', [
-            'client' => $client
+            'client' => $client,
         ]);
     }
 
@@ -109,5 +111,53 @@ class ClientController extends Controller
         Log::info('Client deleted', ['client_id' => $client->id, 'user_id' => auth()->id()]);
         return redirect()->route('crm.clients.index')
             ->with('success', 'Client deleted successfully.');
+    }
+
+    /**
+     * Convert client back to lead
+     */
+    public function convert(Client $client)
+    {
+        if ($client->owner_id !== auth()->id()) {
+            abort(403);
+        }
+
+        try {
+            $lead = $client->convertToLead();
+            return redirect()->route('crm.leads.show', $lead->id)
+                ->with('success', 'Client successfully converted back to lead.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to convert client: ' . $e->getMessage());
+        }
+    }
+
+    public function convertToPartner(Client $client)
+    {
+        if ($client->owner_id !== auth()->id()) {
+            abort(403);
+        }
+
+        try {
+            $partner = $client->convertToPartner();
+            return redirect()->route('crm.partners.index')
+                ->with('success', 'Client successfully converted to partner.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to convert client: ' . $e->getMessage());
+        }
+    }
+
+    public function convertToTicket(Client $client)
+    {
+        if ($client->owner_id !== auth()->id()) {
+            abort(403);
+        }
+
+        try {
+            $ticket = $client->convertToTicket();
+            return redirect()->route('crm.tickets.show', $ticket->id)
+                ->with('success', 'Client successfully converted to ticket.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to convert client: ' . $e->getMessage());
+        }
     }
 }

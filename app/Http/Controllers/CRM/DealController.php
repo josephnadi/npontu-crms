@@ -143,6 +143,8 @@ class DealController extends Controller
         return Inertia::render('CRM/Deals/Show', [
             'deal' => $deal->load(['stage', 'contact', 'client', 'owner', 'activities' => function($query) {
                 $query->orderBy('activity_date', 'desc')->with('owner');
+            }, 'engagements' => function($query) {
+                $query->orderBy('engagement_date', 'desc')->with('user');
             }]),
             'stages' => DealStage::orderBy('order_column')->get(),
         ]);
@@ -194,5 +196,81 @@ class DealController extends Controller
 
         Log::info('Deal deleted', ['deal_id' => $deal->id, 'user_id' => auth()->id()]);
         return redirect()->route('crm.deals.index')->with('success', 'Deal deleted successfully');
+    }
+
+    public function convert(Deal $deal)
+    {
+        if ($deal->owner_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if ($deal->status === 'won') {
+            return back()->with('error', 'Deal is already won and converted.');
+        }
+
+        try {
+            $project = $deal->convertToProject();
+            if ($project === null) {
+                return back()->with('error', 'Failed to convert deal to project. Project creation failed.');
+            }
+            return redirect()->route('crm.projects.show', $project->id)
+                ->with('success', 'Deal converted to Project successfully!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to convert deal: ' . $e->getMessage());
+        }
+    }
+
+    public function convertToLead(Deal $deal)
+    {
+        if ($deal->owner_id !== auth()->id()) {
+            abort(403);
+        }
+
+        try {
+            $lead = $deal->convertToLead();
+            if ($lead === null) {
+                return back()->with('error', 'Failed to convert deal to lead. Lead creation failed.');
+            }
+            return redirect()->route('crm.leads.show', $lead->id)
+                ->with('success', 'Deal converted back to Lead successfully.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to convert deal: ' . $e->getMessage());
+        }
+    }
+
+    public function convertToTicket(Deal $deal)
+    {
+        if ($deal->owner_id !== auth()->id()) {
+            abort(403);
+        }
+
+        try {
+            $ticket = $deal->convertToTicket();
+            if ($ticket === null) {
+                return back()->with('error', 'Failed to convert deal to ticket. Ticket creation failed.');
+            }
+            return redirect()->route('crm.tickets.show', $ticket->id)
+                ->with('success', 'Deal successfully converted to ticket.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to convert deal: ' . $e->getMessage());
+        }
+    }
+
+    public function convertToEngagement(Deal $deal)
+    {
+        if ($deal->owner_id !== auth()->id()) {
+            abort(403);
+        }
+
+        try {
+            $engagement = $deal->convertToEngagement();
+            if ($engagement === null) {
+                return back()->with('error', 'Failed to convert deal to engagement. Engagement creation failed.');
+            }
+            return redirect()->route('crm.engagements.show', $engagement->id)
+                ->with('success', 'Deal successfully converted to engagement.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to convert deal: ' . $e->getMessage());
+        }
     }
 }

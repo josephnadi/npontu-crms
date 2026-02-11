@@ -12,6 +12,29 @@ class LeadSeeder extends Seeder
     {
         $user = User::first();
 
+        if (!$user) {
+            $user = User::create([
+                'name' => 'Admin User',
+                'email' => 'admin@example.com',
+                'password' => \Illuminate\Support\Facades\Hash::make('password'),
+            ]);
+        }
+
+        // Ensure lead sources exist
+        $sources = [
+            ['name' => 'Website', 'description' => 'Leads from website contact form'],
+            ['name' => 'LinkedIn', 'description' => 'Leads from LinkedIn outreach'],
+            ['name' => 'Referral', 'description' => 'Leads from word of mouth'],
+            ['name' => 'Event', 'description' => 'Leads from conferences and events'],
+            ['name' => 'Cold Call', 'description' => 'Leads from cold calling'],
+        ];
+
+        foreach ($sources as $source) {
+            \App\Models\LeadSource::updateOrCreate(['name' => $source['name']], $source);
+        }
+
+        $sourceMap = \App\Models\LeadSource::pluck('id', 'name')->toArray();
+
         $leads = [
             [
                 'first_name' => 'John',
@@ -20,7 +43,7 @@ class LeadSeeder extends Seeder
                 'phone' => '+1 555-0101',
                 'company_name' => 'TechCorp Solutions',
                 'job_title' => 'Product Manager',
-                'source' => 'Website',
+                'lead_source_id' => $sourceMap['Website'] ?? null,
                 'status' => 'new',
                 'score' => 85,
                 'notes' => 'Interested in our enterprise plan.',
@@ -33,7 +56,7 @@ class LeadSeeder extends Seeder
                 'phone' => '+1 555-0102',
                 'company_name' => 'Global IT',
                 'job_title' => 'CTO',
-                'source' => 'LinkedIn',
+                'lead_source_id' => $sourceMap['LinkedIn'] ?? null,
                 'status' => 'contacted',
                 'score' => 60,
                 'notes' => 'Discussed initial requirements on call.',
@@ -46,7 +69,7 @@ class LeadSeeder extends Seeder
                 'phone' => '+1 555-0103',
                 'company_name' => 'Innovate AI',
                 'job_title' => 'Founder',
-                'source' => 'Referral',
+                'lead_source_id' => $sourceMap['Referral'] ?? null,
                 'status' => 'qualified',
                 'score' => 95,
                 'notes' => 'High potential for conversion. Budget approved.',
@@ -59,7 +82,7 @@ class LeadSeeder extends Seeder
                 'phone' => '+1 555-0104',
                 'company_name' => 'Retail Pro',
                 'job_title' => 'Marketing Director',
-                'source' => 'Event',
+                'lead_source_id' => $sourceMap['Event'] ?? null,
                 'status' => 'new',
                 'score' => 45,
                 'notes' => 'Met at the SaaS conference.',
@@ -72,7 +95,7 @@ class LeadSeeder extends Seeder
                 'phone' => '+1 555-0105',
                 'company_name' => 'Lee Consulting',
                 'job_title' => 'Principal Consultant',
-                'source' => 'Cold Call',
+                'lead_source_id' => $sourceMap['Cold Call'] ?? null,
                 'status' => 'lost',
                 'score' => 20,
                 'notes' => 'No budget for this year.',
@@ -81,7 +104,7 @@ class LeadSeeder extends Seeder
         ];
 
         foreach ($leads as $lead) {
-            Lead::create($lead);
+            Lead::updateOrCreate(['email' => $lead['email']], $lead);
         }
     }
 }

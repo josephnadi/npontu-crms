@@ -71,6 +71,10 @@ class ContactController extends Controller
     {
         $contact->load(['client', 'owner', 'deals', 'activities' => function($query) {
             $query->orderBy('activity_date', 'desc')->with('owner');
+        }, 'communications' => function($query) {
+            $query->orderBy('created_at', 'desc');
+        }, 'engagements' => function($query) {
+            $query->orderBy('engagement_date', 'desc')->with('user');
         }]);
         return Inertia::render('CRM/Contacts/Show', [
             'contact' => $contact,
@@ -121,5 +125,41 @@ class ContactController extends Controller
         $contact->delete();
         Log::info('Contact deleted', ['contact_id' => $contact->id, 'user_id' => auth()->id()]);
         return redirect()->route('crm.contacts.index')->with('success', 'Contact deleted successfully.');
+    }
+
+    public function convert(Contact $contact)
+    {
+        if ($contact->owner_id !== auth()->id()) {
+            abort(403);
+        }
+
+        try {
+            $lead = $contact->convertToLead();
+            if ($lead === null) {
+                return back()->with('error', 'Failed to convert contact to lead. Lead creation failed.');
+            }
+            return redirect()->route('crm.leads.show', $lead->id)
+                ->with('success', 'Contact successfully converted to lead.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to convert contact: ' . $e->getMessage());
+        }
+    }
+
+    public function convertToTicket(Contact $contact)
+    {
+        if ($contact->owner_id !== auth()->id()) {
+            abort(403);
+        }
+
+        try {
+            $ticket = $contact->convertToTicket();
+            if ($ticket === null) {
+                return back()->with('error', 'Failed to convert contact to ticket. Ticket creation failed.');
+            }
+            return redirect()->route('crm.tickets.show', $ticket->id)
+                ->with('success', 'Contact successfully converted to ticket.');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Failed to convert contact: ' . $e->getMessage());
+        }
     }
 }

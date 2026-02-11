@@ -1,0 +1,33 @@
+<?php
+
+namespace Database\Factories;
+
+use Illuminate\Database\Eloquent\Factories\Factory;
+
+/**
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Client>
+ */
+class ClientFactory extends Factory
+{
+    /**
+     * Define the model's default state.
+     *
+     * @return array<string, mixed>
+     */
+    public function definition(): array
+    {
+        return [
+            'name' => $this->faker->company(),
+            'industry' => $this->faker->randomElement(['Technology', 'Finance', 'Healthcare', 'Education', 'Marketing', 'Real Estate']),
+            'website' => $this->faker->url(),
+            'phone' => $this->faker->phoneNumber(),
+            'address' => $this->faker->streetAddress(),
+            'city' => $this->faker->city(),
+            'state' => $this->faker->state(),
+            'country' => $this->faker->country(),
+            'postal_code' => $this->faker->postcode(),
+            'notes' => $this->faker->paragraph(),
+            'owner_id' => \App\Models\User::first()?->id ?? \App\Models\User::factory(),
+        ];
+    }
+}
