@@ -72,8 +72,7 @@ const sendMessage = async () => {
 </script>
 
 <template>
-  <transition name="slide-fade">
-    <v-card class="ai-chat-card">
+  <v-card class="ai-chat-card">
       <v-toolbar color="primary" density="compact">
         <v-toolbar-title>AI Assistant</v-toolbar-title>
         <v-spacer></v-spacer>
@@ -106,14 +105,13 @@ const sendMessage = async () => {
           <v-icon>mdi-send</v-icon>
         </v-btn>
       </v-card-actions>
-    </v-card>
-  </transition>
+  </v-card>
+
 </template>
 
 <style scoped>
 .ai-chat-card {
   max-height: 500px; /* Adjust as needed */
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
   border-radius: 0; /* No rounded corners for sidebar integration */
@@ -156,15 +154,5 @@ const sendMessage = async () => {
   border-top: 1px solid #eee;
 }
 
-/* Vue Transition Styles */
-.slide-fade-enter-active,
-.slide-fade-leave-active {
-  transition: all 0.3s ease-out;
-}
 
-.slide-fade-enter-from,
-.slide-fade-leave-to {
-  transform: translateX(20px);
-  opacity: 0;
-}
 </style>
